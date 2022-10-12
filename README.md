@@ -1,5 +1,13 @@
 # SDLE First Assignment
 
+## Instructions
+```c++
+$ cd ./src
+$ cmake -S . -B ./build
+$ cd ./build
+$ make
+```
+
 SDLE First Assignment of group T&lt;m&gt;&lt;n&gt;G&lt;p&gt;&lt;q&gt;.
 
 Group members:
