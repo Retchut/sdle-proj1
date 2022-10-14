@@ -8,12 +8,20 @@ void printUsage (){
     std::string usage = "Usage:\n\t./server\nor\n\t./server put <topic>";
     std::cout << usage << std::endl;
 }
+
+int run(){
+    while(true){
+
+    }
+    return 0;
+}
+
 int main (int argc, char *argv[]) {
     switch(argc){
         case 1:
             // run server, receiving connections
             std::cout << "Running server eventually" << std::endl;
-            return 0;
+            return run();
         case 3:
             if(std::string(argv[1]) != "put"){
                 printUsage();
