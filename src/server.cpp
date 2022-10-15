@@ -1,11 +1,11 @@
 #include <iostream>
 #include <zmq.hpp>
-#include <string>
 #include <map>
 #include <queue>
-#include <filesystem>
+#include "utils.h"
 
 int THREAD_NUM = 2;
+std::string entityName;
 std::map<int, std::string> messageMap;
 
 class Message{
@@ -195,7 +195,8 @@ int run(std::map<std::string, Topic> * topics_map){
 }
 
 int main (int argc, char *argv[]) {
-
+    entityName = "server";
+    setupStorage(entityName);
     std::map<std::string, Topic> topics_map;
 
     switch(argc){
@@ -207,6 +208,15 @@ int main (int argc, char *argv[]) {
             printUsage();
             return 1;
     }
+    // switch(argc){
+    //     case 1:
+    //         // run server, receiving connections
+    //         std::cout << "Running server" << std::endl;
+    //         return run();
+    //     default:
+    //         printUsage();
+    //         return 1;
+    // }
 
     // int i = 0;
     // while(true){
