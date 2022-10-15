@@ -1,8 +1,11 @@
 #include <iostream>
 #include <zmq.hpp>
 #include <string>
+#include <map>
+#include <filesystem>
 
 int THREAD_NUM = 2;
+std::map<int, std::string> messageMap;
 
 void printUsage (){
     std::string usage = "Usage:\n\t./server\nor\n\t./server put <topic>";
@@ -16,11 +19,16 @@ int run(){
     return 0;
 }
 
+int savePost(std::string folderName, std::string topic, std::string message){
+
+    return 0;
+}
+
 int main (int argc, char *argv[]) {
     switch(argc){
         case 1:
             // run server, receiving connections
-            std::cout << "Running server eventually" << std::endl;
+            std::cout << "Running server" << std::endl;
             return run();
         case 3:
             if(std::string(argv[1]) != "put"){
