@@ -1,6 +1,9 @@
 # SDLE First Assignment
 
 ## Instructions
+Build [cppzmq](https://github.com/zeromq/cppzmq) and move it to the root of this repository.\
+After that run:
+
 ```c++
 $ cd ./src
 $ cmake -S . -B ./build

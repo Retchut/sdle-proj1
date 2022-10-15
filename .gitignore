@@ -3,3 +3,5 @@ src/client
 src/server
 src/build
 src/storage/
+
+./cppzmq/
