@@ -1,10 +1,11 @@
 #include <iostream>
 #include <zmq.hpp>
-#include <string>
 #include <map>
-#include <filesystem>
+
+#include "utils.h"
 
 int THREAD_NUM = 2;
+std::string entityName;
 std::map<int, std::string> messageMap;
 
 void printUsage (){
@@ -17,23 +18,30 @@ int run(){
 
     }
     return 0;
-}
 
-int savePost(std::string folderName, std::string topic, std::string message){
-
-    return 0;
 }
 
 int main (int argc, char *argv[]) {
+    entityName = "server";
+    setupStorage(entityName);
     switch(argc){
-        case 1:
-            // run server, receiving connections
-            std::cout << "Running server" << std::endl;
-            return run();
-        default:
-            printUsage();
-            return 1;
+    case 1:
+        // run server, receiving connections
+        std::cout << "Running server" << std::endl;
+        return run();
+    default:
+        printUsage();
+        return 1;
     }
+    // switch(argc){
+    //     case 1:
+    //         // run server, receiving connections
+    //         std::cout << "Running server" << std::endl;
+    //         return run();
+    //     default:
+    //         printUsage();
+    //         return 1;
+    // }
 
     // int i = 0;
     // while(true){
