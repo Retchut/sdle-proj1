@@ -8,7 +8,7 @@ int THREAD_NUM = 2;
 std::map<int, std::string> messageMap;
 
 void printUsage (){
-    std::string usage = "Usage:\n\t./server\nor\n\t./server put <topic>";
+    std::string usage = "Usage:\n\t./server";
     std::cout << usage << std::endl;
 }
 
@@ -30,13 +30,6 @@ int main (int argc, char *argv[]) {
             // run server, receiving connections
             std::cout << "Running server" << std::endl;
             return run();
-        case 3:
-            if(std::string(argv[1]) != "put"){
-                printUsage();
-                return 1;
-            }
-            std::cout << "putting message on topic " << std::string(argv[2]) << std::endl;
-            return 0;
         default:
             printUsage();
             return 1;
