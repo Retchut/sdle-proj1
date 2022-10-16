@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
-std::string STORAGE_DIR = "../storage";
+std::string STORAGE_DIR = "./storage";
 
 void setupStorage(std::string entity){
     std::string directories = STORAGE_DIR + "/" + entity;
