@@ -23,8 +23,8 @@ public:
     // 
     // last_msg_id: the ID of the last message the client has received
     //
-    Message get(std::string client_id, std::string last_msg_id);
-
+    Message get(std::string client_id, int last_msg_id);
+    void show();
 
 private:
     std::string name;

@@ -34,7 +34,6 @@ std::vector <std::string> tokenize(char * input){
 }
 
 int run(std::map<std::string, Topic> * topics_map){
-    
 
     zmq::context_t context (2);
     zmq::socket_t socket (context, zmq::socket_type::rep);
@@ -42,23 +41,21 @@ int run(std::map<std::string, Topic> * topics_map){
     while(true){
         zmq::message_t request;
 
-        std::cout << "waiting for message" << std::endl;
+        std::cout << "...Waiting for message" << std::endl;
         auto size = socket.recv (request, zmq::recv_flags::none);
-        std::cout << "Received msg size: " << size.value() << std::endl;
+        std::cout << "---Received msg size: " << size.value() << std::endl;
 
         // add '\0'
         char * request_data_c_str = (char *) request.data();
         request_data_c_str[size.value()] = '\0';
 
         std::string request_data(request_data_c_str);        
-        std::string reply_msg;
+        std::string reply_msg = "empty";
         int inst_type = -1; // instruction type
         std::vector <std::string> tokens = tokenize((char *) request.data());
 
         for (int i = 0; i<tokens.size(); ++i)
             std::cout << "token " << i << ": " << tokens[i] << std::endl;
-
-
 
         if (tokens[0] == "SUB"){
             if (tokens.size() < 3){
@@ -95,34 +92,98 @@ int run(std::map<std::string, Topic> * topics_map){
         if (inst_type != -1 && tokens.size() > 2){
             std::string client_id;
             std::string topic_name;
-            std::string last_msg_id;
+            int last_msg_id;
             std::string content;
 
             // read first two arguments (which are common for all instruction types)
-            for (int i=0; i<2; ++i){    
-                if (i == 0)
-                    client_id = tokens[i];
-                else // i == 1
-                    topic_name = tokens[i];
-            }
+            client_id = tokens[1];
+            topic_name = tokens[2];
 
-            Topic *topic = &topics_map->find(topic_name)->second;
+            //std::map<std::string, Topic>::iterator topic_pair = topics_map->find(topic_name);
+            
+            try {
+                (*topics_map).at(topic_name);
+            }catch(const std::exception & e){
+                // topic doesn't exist
+                if (tokens[0] == "SUB")
+                    inst_type = 5; // to create a new topic
+                else{
+                    std::cout << "Topic does not exist" << std::endl;
+                    reply_msg = "Invalid topic name";
+                    inst_type = -1;
+                }
+            }
+            Topic * topic;
+            if (inst_type != -1 && inst_type != 5)
+                topic = &(*topics_map).at(topic_name);
             switch(inst_type){
                 case 1:
+                    //SUB
+                    if (topic->sub(client_id) == 0)
+                        reply_msg = "SUB " + client_id + " " + topic_name;
+                    else if (topic->sub(client_id) == 1)
+                        reply_msg = "RESUB " + client_id + " " + topic_name;
+                    else{
+                        reply_msg = "PUB error";
+                    }
                     break;
                 case 2:
+                    //UNSUB
+                    if (topic->unsub(client_id) == 0)
+                        reply_msg = "UNSUB " + client_id + " " + topic_name;
+                    else{
+                        reply_msg = "UNSUB error";
+                    }
                     break;
                 case 3:
+                    //GET
                 {
-                    last_msg_id = tokens[3];
+                    if (tokens[3] == "null")
+                        last_msg_id = -1;
+                    else {
+                        try {
+                            last_msg_id = std::stoi(tokens[3]);
+                        }
+                        catch(const std::invalid_argument& e){
+                            std::cout << "Invalid argument: " << e.what() << std::endl;
+                            reply_msg = "Invalid last message id";
+                            break;
+                        }
+                    }
                     Message msg = topic->get(client_id, last_msg_id);
+                    if (msg.get_id() != -1 && msg.get_id() != -2)
+                        reply_msg = std::to_string(msg.get_id()) + " " + msg.get_content();
+                    else if(msg.get_id() == -1)
+                        reply_msg = "error_1";
+                    else if(msg.get_id() == -2)
+                        reply_msg = "error_2";
+                    else 
+                        reply_msg == "error"; //this shouldn't happen
                     break;
                 }
                 case 4:
+                    //PUT
+                {
+                    content = tokens[3];
+                    topic->put(Message(content));
+                    break;
+                }
+                case 5:
+                    //SUB to nonexistent topic
+                    Topic new_topic = Topic(topic_name);
+                    new_topic.sub(client_id);
+                    topics_map->insert(std::pair<std::string, Topic>(topic_name, new_topic));
                     break;
             }
         }
-        std::cout << "reply: " << reply_msg.c_str() << std::endl;
+
+        // Show topics_map
+        for (auto it = (*topics_map).begin(); it!=(*topics_map).end(); ++it){
+            std::cout << "->Topic " << it->first << ":\n";
+            it->second.show();
+        }
+        
+        std::cout << "---Reply: " << reply_msg.c_str() << std::endl;
         zmq::message_t reply ( reply_msg.length());
         memcpy (reply.data (), reply_msg.c_str(), reply_msg.length());
         socket.send (reply, zmq::send_flags::none);

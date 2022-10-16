@@ -37,34 +37,34 @@ int changeLastMessageReceivedFromTopic (std::map<std::string, int> &subscribedTo
 }
 
 void testClientCommunication(){
-        // Testing
-        zmq::context_t context(1);
-        zmq::socket_t socket (context, zmq::socket_type::req);
-        socket.connect("tcp://127.0.0.1:5555");
+    // Testing
+    zmq::context_t context(1);
+    zmq::socket_t socket (context, zmq::socket_type::req);
+    socket.connect("tcp://127.0.0.1:5555");
 
-        int i = 0;
-        while(true){
-            //Read from stdin
-            std::string line;
-            std::getline(std::cin, line);
+    int i = 0;
+    while(true){
+        //Read from stdin
+        std::string line;
+        std::getline(std::cin, line);
 
-            zmq::message_t request(line.length());
+        zmq::message_t request(line.length());
 
-            //Send
-            memcpy(request.data(), line.c_str(), line.length());
-            socket.send (request, zmq::send_flags::none);
-            std::cout << "sent message: " << line.c_str() << std::endl;
+        //Send
+        memcpy(request.data(), line.c_str(), line.length());
+        socket.send (request, zmq::send_flags::none);
+        std::cout << "---Sent message: " << line.c_str() << std::endl;
 
-            //Get a reply
-            zmq::message_t reply;
-            std::cout << "waiting for reply" << std::endl;
-            auto size = socket.recv (reply, zmq::recv_flags::none);
-            char * reply_c_str = (char *) reply.data();
-            reply_c_str[size.value()] = '\0';
-            std::cout << "Reply: " << reply_c_str << std::endl;
-            i++;
-        }
-        // END-Testing
+        //Get a reply
+        zmq::message_t reply;
+        std::cout << "...Waiting for reply" << std::endl;
+        auto size = socket.recv (reply, zmq::recv_flags::none);
+        char * reply_c_str = (char *) reply.data();
+        reply_c_str[size.value()] = '\0';
+        std::cout << "---Reply: " << reply_c_str << std::endl;
+        i++;
+    }
+    // END-Testing
 }
 
 void runClient(){
@@ -97,8 +97,8 @@ int main (int argc, char *argv[]) {
             setupStorage(entityName);
 
             std::cout << "Running client " << clientID << std::endl;
-            // testClientCommunication();
-            runClient();
+            testClientCommunication();
+            //runClient();
         }
             return 0;
         default:
