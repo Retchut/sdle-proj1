@@ -1,15 +1,18 @@
 # SDLE First Assignment
 
 ## Instructions
-Build [cppzmq](https://github.com/zeromq/cppzmq) and move it to the root of this repository.\
-After that run:
+Install cppzmq by running:
 
-```c++
-$ cd ./src
-$ cmake -S . -B ./build
-$ cd ./build
-$ make
+```bash
+$ sudo apt install libzmq3-dev
 ```
+
+Then, make sure CMake is installed and run:
+
+```bash
+$ ./build.sh
+```
+Executables should now be in folder build.
 
 SDLE First Assignment of group T&lt;m&gt;&lt;n&gt;G&lt;p&gt;&lt;q&gt;.
 
