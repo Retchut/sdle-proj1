@@ -1,4 +1,3 @@
 #! /bin/bash
 
-rm -r ./build;
-rm -r ./storage;
+rm -rf ./build/
