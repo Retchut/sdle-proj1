@@ -36,17 +36,30 @@ int changeLastMessageReceivedFromTopic (std::map<std::string, int> &subscribedTo
     return 0;
 }
 
-void testClientCommunication(){
+void testClientCommunication(int clientID){
     // Testing
     zmq::context_t context(1);
     zmq::socket_t socket (context, zmq::socket_type::req);
     socket.connect("tcp://127.0.0.1:5555");
 
     int i = 0;
+    std::string topic_name;
+    if (clientID == 1)
+        topic_name = "2";
+    else topic_name = "1";
+
     while(true){
         //Read from stdin
         std::string line;
-        std::getline(std::cin, line);
+        if (i > 2) i = 0;
+        if (i == 0)
+            line = "SUB " + std::to_string(clientID) + " " + topic_name;
+        else if (i == 1)
+            line = "PUT " + std::to_string(clientID) + " " + std::to_string(clientID) + " mensagem_catita" ;
+        else if (i == 2)
+            line = "GET " + std::to_string(clientID) + " " + topic_name + " -1";
+        i++;
+        //std::getline(std::cin, line);
 
         zmq::message_t request(line.length());
 
@@ -55,6 +68,8 @@ void testClientCommunication(){
         socket.send (request, zmq::send_flags::none);
         std::cout << "---Sent message: " << line.c_str() << std::endl;
 
+        sleep(0.5);
+
         //Get a reply
         zmq::message_t reply;
         std::cout << "...Waiting for reply" << std::endl;
@@ -62,7 +77,8 @@ void testClientCommunication(){
         char * reply_c_str = (char *) reply.data();
         reply_c_str[size.value()] = '\0';
         std::cout << "---Reply: " << reply_c_str << std::endl;
-        i++;
+
+        
     }
     // END-Testing
 }
@@ -97,7 +113,7 @@ int main (int argc, char *argv[]) {
             setupStorage(entityName);
 
             std::cout << "Running client " << clientID << std::endl;
-            testClientCommunication();
+            testClientCommunication(clientID);
             //runClient();
         }
             return 0;

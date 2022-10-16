@@ -21,6 +21,11 @@ int savePost(std::string folderName, std::string topic, std::string message){
     return 0;
 }
 
+void print_tokens(std::vector<std::string> tokens){
+    for (int i = 0; i<tokens.size(); ++i)
+        std::cout << "token " << i << ": " << tokens[i] << std::endl;
+}
+
 std::vector <std::string> tokenize(char * input){
     std::vector<std::string> res;
     char *token = std::strtok(input, " ");
@@ -54,8 +59,7 @@ int run(std::map<std::string, Topic> * topics_map){
         int inst_type = -1; // instruction type
         std::vector <std::string> tokens = tokenize((char *) request.data());
 
-        for (int i = 0; i<tokens.size(); ++i)
-            std::cout << "token " << i << ": " << tokens[i] << std::endl;
+        print_tokens(tokens);
 
         if (tokens[0] == "SUB"){
             if (tokens.size() < 3){
@@ -171,6 +175,7 @@ int run(std::map<std::string, Topic> * topics_map){
                     topic->put(new_message);
 
                     savePost(entityName, topic->get_name(), content, new_message.get_id());
+                    reply_msg = "PUT " + client_id + " " + topic_name + " " + new_message.get_content();
                     break;
                 }
                 case 5:
@@ -189,6 +194,10 @@ int run(std::map<std::string, Topic> * topics_map){
             std::cout << "->Topic " << it->first << ":\n";
             it->second.show();
         }
+
+        //std::cout << "___sleeping___" << std::endl;
+        //sleep(3);
+        //std::cout << "woke_up" << std::endl;
         
         std::cout << "---Reply: " << reply_msg.c_str() << std::endl;
         zmq::message_t reply ( reply_msg.length());
