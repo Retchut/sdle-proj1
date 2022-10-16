@@ -15,15 +15,11 @@ public:
     int sub(std::string client_id);
     int unsub(std::string client_id);
 
-    // puts a message in a topic (in every client's queue)
     int put(Message msg);
-
+    Message get(std::string client_id, int last_msg_id);
     int rem(std::string client_id);
 
-    // 
-    // last_msg_id: the ID of the last message the client has received
-    //
-    Message get(std::string client_id, int last_msg_id);
+    std::string get_name();
     void show();
 
 private:

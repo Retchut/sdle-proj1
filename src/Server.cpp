@@ -165,7 +165,12 @@ int run(std::map<std::string, Topic> * topics_map){
                     //PUT
                 {
                     content = tokens[3];
-                    topic->put(Message(content));
+
+                    int next_post_id = getNextPostID(entityName, topic_name);
+                    Message new_message = Message(next_post_id, content);
+                    topic->put(new_message);
+
+                    savePost(entityName, topic->get_name(), content, new_message.get_id());
                     break;
                 }
                 case 5:
@@ -173,6 +178,8 @@ int run(std::map<std::string, Topic> * topics_map){
                     Topic new_topic = Topic(topic_name);
                     new_topic.sub(client_id);
                     topics_map->insert(std::pair<std::string, Topic>(topic_name, new_topic));
+
+                    reply_msg = "SUB " + client_id + " " + topic_name;
                     break;
             }
         }

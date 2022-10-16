@@ -12,6 +12,8 @@ public:
     int get_id();
     std::string get_content();
     static int get_next_message_id();
+    static int set_next_message_id(int id);
+
     void show();
 
 private:

@@ -59,15 +59,19 @@ Message Topic::get(std::string client_id, int last_msg_id){
     }
 
     Message front_message = queue->front();
-    if (front_message.get_id() == last_msg_id){
+    if (queue->size() > 0 && front_message.get_id() == last_msg_id){
         queue->pop();
         front_message = queue->front();
     }
 
-    if (queue->size() == 0)
+    if (queue->size() < 1)
         return Message(-2, "");
 
     return front_message;
+}
+
+std::string Topic::get_name(){
+    return name;
 }
 
 void Topic::show(){
