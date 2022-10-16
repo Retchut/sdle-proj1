@@ -1,12 +1,36 @@
 #include <iostream>
 #include <stdexcept>
 #include <zmq.hpp>
+#include <map>
+#include <string>
 
 int clientID;
 
 void printUsage (){
     std::string usage = "Usage:\n\t./client <id>";
     std::cout << usage << std::endl;
+}
+
+void printSubscribedTopics (std::map<std::string, int> &subscribedTopics) {
+    for (auto itr = subscribedTopics.begin(); itr != subscribedTopics.end(); ++itr) {
+        std::cout << itr->first << '\t' << itr->second << '\n';
+    }
+}
+
+void subscribeTopic (std::map<std::string, int> &subscribedTopics, std::string topic) {
+    subscribedTopics.insert(std::pair<std::string, int>(topic, -1));
+}
+
+int unsubscribeTopic (std::map<std::string, int> &subscribedTopics, std::string topic) {
+    return subscribedTopics.erase(topic);
+}
+
+int changeLastMessageReceivedFromTopic (std::map<std::string, int> &subscribedTopics, std::string topic, int messageID) {
+    if(subscribedTopics.find(topic) != subscribedTopics.end()) {
+        subscribedTopics.at(topic) = messageID;
+        return 1;
+    }
+    return 0;
 }
 
 int main (int argc, char *argv[]) {
@@ -22,11 +46,23 @@ int main (int argc, char *argv[]) {
             }
             // run client, receiving instructions
             std::cout << "Running client " << clientID << std::endl;
-            return 0;
+            break;
         default:
             printUsage();
             return 1;
     }
+
+    std::map<std::string, int> subscribedTopics;
+
+    subscribeTopic(subscribedTopics, "praxe");
+    subscribeTopic(subscribedTopics, "tuna");
+    printSubscribedTopics(subscribedTopics);
+
+    unsubscribeTopic(subscribedTopics, "praxe");
+    printSubscribedTopics(subscribedTopics);
+
+    changeLastMessageReceivedFromTopic(subscribedTopics, "tuna", 3);
+    printSubscribedTopics(subscribedTopics);
 
     // int i = 0;
     // while(true){
