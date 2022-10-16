@@ -2,76 +2,14 @@
 #include <zmq.hpp>
 #include <map>
 #include <queue>
-#include "utils.h"
+#include "Utils.h"
+
+#include "Message.h"
+#include "Topic.h"
 
 int THREAD_NUM = 2;
 std::string entityName;
 std::map<int, std::string> messageMap;
-
-class Message{
-public:
-    Message(std::string id, std::string content)
-        :id(id), content(content)
-    {}
-    ~Message(){}
-
-    std::string get_id(){
-        return id;
-    }
-
-    std::string get_content(){
-        return content;
-    }
-
-private:
-    std::string id;
-    std::string content;
-};
-
-class Topic{
-public:
-    Topic(std::string topic_name): name(topic_name){};
-    ~Topic(){};
-
-    int sub(std::string client_id){
-        return 0;
-    }
-    int unsub(std::string client_id){
-        return 0;
-    }
-
-    // puts a message in a topic (in every client's queue)
-    int put(Message msg){
-        for (std::map<std::string, std::queue <Message>>::iterator it = client_msg_queues.begin(); it!=client_msg_queues.end(); ++it){
-            it->second.push(msg);
-        }
-        return 0;
-    }
-
-    int rem(std::string client_id){
-        client_msg_queues.erase(client_id);
-        return 0;
-    }
-
-    // 
-    // last_msg_id: the ID of the last message the client has received
-    //
-    Message get(std::string client_id, std::string last_msg_id){
-        auto queue = &client_msg_queues.find(client_id)->second;
-        Message front_message = queue->front();
-        if (front_message.get_id() == last_msg_id){
-            queue->pop();
-            front_message = queue->front();
-        }
-        return front_message;
-    }
-
-
-private:
-    std::string name;
-    std::map<std::string, std::queue <Message>> client_msg_queues;
-
-};
 
 void printUsage (){
     std::string usage = "Usage:\n\t./server";
@@ -208,36 +146,6 @@ int main (int argc, char *argv[]) {
             printUsage();
             return 1;
     }
-    // switch(argc){
-    //     case 1:
-    //         // run server, receiving connections
-    //         std::cout << "Running server" << std::endl;
-    //         return run();
-    //     default:
-    //         printUsage();
-    //         return 1;
-    // }
-
-    // int i = 0;
-    // while(true){
-    //     try{
-    //         zmq::message_t request;
-
-    //         std::cout << "waiting for message" << std::endl;
-    //         auto res = socket.recv (request, zmq::recv_flags::none); //check flags
-    //         std::cout << "Received message: " << request.data() << std::endl;
-
-    //         zmq::message_t reply;
-            
-    //         memcpy(reply.data(), "reply", 5);
-    //         std::cout << "replying " << i << std::endl; 
-    //         socket.send(reply, zmq::send_flags::none);
-    //         i++;
-    //     }
-    //     catch(...){
-    //         std::cout << "client died" << std::endl;
-    //     }
-    // }
 
     return 0;
 }
