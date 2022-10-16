@@ -36,7 +36,7 @@ int changeLastMessageReceivedFromTopic (std::map<std::string, int> &subscribedTo
     return 0;
 }
 
-void testClient(){
+void testClientCommunication(){
         // Testing
         zmq::context_t context(1);
         zmq::socket_t socket (context, zmq::socket_type::req);
@@ -97,7 +97,7 @@ int main (int argc, char *argv[]) {
             setupStorage(entityName);
 
             std::cout << "Running client " << clientID << std::endl;
-            // testClient();
+            // testClientCommunication();
             runClient();
         }
             return 0;
