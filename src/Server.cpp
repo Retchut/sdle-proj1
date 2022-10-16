@@ -2,8 +2,8 @@
 #include <zmq.hpp>
 #include <map>
 #include <queue>
-#include "Utils.h"
 
+#include "Utils.h"
 #include "Message.h"
 #include "Topic.h"
 
