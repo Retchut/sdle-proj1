@@ -68,7 +68,7 @@ void testClientCommunication(int clientID){
         socket.send (request, zmq::send_flags::none);
         std::cout << "---Sent message: " << line.c_str() << std::endl;
 
-        sleep(0.5);
+        sleepForMs(500);
 
         //Get a reply
         zmq::message_t reply;

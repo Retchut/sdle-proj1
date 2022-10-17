@@ -1,9 +1,19 @@
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif 
+
 #include <iostream>
 #include <string>
 #include <filesystem>
 #include <fstream>
 
 std::string STORAGE_DIR = "./Storage";
+
+void sleepForMs(float miliseconds) {
+    usleep(miliseconds);
+}
 
 void setupStorage(std::string entity){
     std::string directories = STORAGE_DIR + "/" + entity;

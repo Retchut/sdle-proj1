@@ -3,6 +3,7 @@
 
 #include <string>
 
+void sleepForMs(float miliseconds);
 void setupStorage(std::string entity);
 int getNextPostID(std::string entityName, std::string topic);
 int savePost(std::string entityName, std::string topic, std::string message, int postID);
