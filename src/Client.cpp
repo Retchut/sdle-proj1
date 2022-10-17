@@ -42,7 +42,7 @@ void testClientCommunication(int clientID){
     zmq::socket_t socket (context, zmq::socket_type::req);
     socket.connect("tcp://127.0.0.1:5555");
 
-    int i = 0;
+    int i = -1;
     std::string topic_name;
     if (clientID == 1)
         topic_name = "2";
@@ -61,7 +61,14 @@ void testClientCommunication(int clientID){
             line = "GET " + std::to_string(clientID) + " " + topic_name + " -1";
         i++;
         */
-        std::getline(std::cin, line);
+        //std::getline(std::cin, line);
+
+        if (i == -1)
+            line = "SUB " + std::to_string(clientID) + " Topic1";
+        else            
+            line = "PUT " + std::to_string(clientID) + " Topic1 Ola";
+        std::cout << i << std::endl;
+        i++;
 
         zmq::message_t request(line.length());
 
@@ -69,8 +76,6 @@ void testClientCommunication(int clientID){
         memcpy(request.data(), line.c_str(), line.length());
         socket.send (request, zmq::send_flags::none);
         std::cout << "---Sent message: " << line.c_str() << std::endl;
-
-        sleepForMs(500);
 
         //Get a reply
         zmq::message_t reply;
@@ -80,6 +85,10 @@ void testClientCommunication(int clientID){
         reply_c_str[size.value()] = '\0';
         std::cout << "---Reply: " << reply_c_str << std::endl;
 
+        if (i == 200){
+            sleepForMs(4000000);
+            i = 0;
+        }
         
     }
     // END-Testing
