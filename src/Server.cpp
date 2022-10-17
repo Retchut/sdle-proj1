@@ -8,7 +8,7 @@
 #include "Topic.h"
 
 enum InstructionType {
-    INVALID_INSTRUCTION = -1, 
+    INVALID_INSTRUCTION = -1,
     SUB = 1,
     UNSUB = 2,
     GET = 3,
@@ -60,7 +60,7 @@ int run(std::map<std::string, Topic> * topics_map){
 
         std::string request_data(request_data_c_str);        
         std::string reply_msg = "empty";
-        InstructionType instType; // instruction type
+        InstructionType instType = INVALID_INSTRUCTION; // instruction type
         std::vector <std::string> tokens = tokenize((char *) request.data());
 
         print_tokens(tokens);

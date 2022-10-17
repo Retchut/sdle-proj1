@@ -51,6 +51,7 @@ void testClientCommunication(int clientID){
     while(true){
         //Read from stdin
         std::string line;
+        /*
         if (i > 2) i = 0;
         if (i == 0)
             line = "SUB " + std::to_string(clientID) + " " + topic_name;
@@ -59,7 +60,8 @@ void testClientCommunication(int clientID){
         else if (i == 2)
             line = "GET " + std::to_string(clientID) + " " + topic_name + " -1";
         i++;
-        //std::getline(std::cin, line);
+        */
+        std::getline(std::cin, line);
 
         zmq::message_t request(line.length());
 
