@@ -42,6 +42,12 @@ void testClientCommunication(int clientID){
     zmq::socket_t socket (context, zmq::socket_type::req);
     socket.connect("tcp://127.0.0.1:5555");
 
+    /*
+    zmq::pollitem_t item;
+    item.socket = socket;
+    item.events = ZMQ_POLLIN;
+    */
+
     int i = -1;
     std::string topic_name;
     if (clientID == 1)
@@ -65,8 +71,11 @@ void testClientCommunication(int clientID){
 
         if (i == -1)
             line = "SUB " + std::to_string(clientID) + " Topic1";
-        else            
-            line = "PUT " + std::to_string(clientID) + " Topic1 Ola";
+        else{
+            line = "PUT  " + std::to_string(clientID) + " Topic1 Ola";
+            for (int j = 0; j<1000; ++j)
+                line += "Broo_";
+        }
         std::cout << i << std::endl;
         i++;
 
@@ -86,6 +95,7 @@ void testClientCommunication(int clientID){
         std::cout << "---Reply: " << reply_c_str << std::endl;
 
         if (i == 200){
+            std::cout << "Sleeping" << std::endl;
             sleepForMs(4000000);
             i = 0;
         }

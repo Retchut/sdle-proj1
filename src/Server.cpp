@@ -63,7 +63,7 @@ int run(std::map<std::string, Topic> * topics_map){
         InstructionType instType = INVALID_INSTRUCTION; // instruction type
         std::vector <std::string> tokens = tokenize((char *) request.data());
 
-        print_tokens(tokens);
+        //print_tokens(tokens);
 
         if (tokens[0] == "SUB"){
             if (tokens.size() < 3){
