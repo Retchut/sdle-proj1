@@ -28,7 +28,7 @@ int unsubscribeTopic (std::map<std::string, int> &subscribedTopics, std::string 
     return subscribedTopics.erase(topic);
 }
 
-int changeLastMessageReceivedFromTopic (std::map<std::string, int> &subscribedTopics, std::string topic, int messageID) {
+int changeLastMessageID (std::map<std::string, int> &subscribedTopics, std::string topic, int messageID) {
     if(subscribedTopics.find(topic) != subscribedTopics.end()) {
         subscribedTopics.at(topic) = messageID;
         return 1;
@@ -84,17 +84,16 @@ void testClientCommunication(int clientID){
 }
 
 void runClient(){
+
+    zmq::context_t context(1);
+    zmq::socket_t socket (context, zmq::socket_type::req);
+    socket.connect("tcp://127.0.0.1:5555");
+
     std::map<std::string, int> subscribedTopics;
 
-    subscribeTopic(subscribedTopics, "praxe");
-    subscribeTopic(subscribedTopics, "tuna");
-    printSubscribedTopics(subscribedTopics);
-
-    unsubscribeTopic(subscribedTopics, "praxe");
-    printSubscribedTopics(subscribedTopics);
-
-    changeLastMessageReceivedFromTopic(subscribedTopics, "tuna", 3);
-    printSubscribedTopics(subscribedTopics);
+    while (true) {
+        
+    }
 }
 
 int main (int argc, char *argv[]) {

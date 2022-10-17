@@ -7,6 +7,15 @@
 #include "Message.h"
 #include "Topic.h"
 
+enum InstructionType {
+    INVALID_INSTRUCTION = -1, 
+    SUB = 1,
+    UNSUB = 2,
+    GET = 3,
+    PUT = 4,
+    SUB_NEW_TOPIC = 5
+};
+
 int THREAD_NUM = 2;
 std::string entityName;
 std::map<int, std::string> messageMap;
@@ -14,11 +23,6 @@ std::map<int, std::string> messageMap;
 void printUsage (){
     std::string usage = "Usage:\n\t./server";
     std::cout << usage << std::endl;
-}
-
-int savePost(std::string folderName, std::string topic, std::string message){
-
-    return 0;
 }
 
 void print_tokens(std::vector<std::string> tokens){
@@ -56,7 +60,7 @@ int run(std::map<std::string, Topic> * topics_map){
 
         std::string request_data(request_data_c_str);        
         std::string reply_msg = "empty";
-        int inst_type = -1; // instruction type
+        InstructionType instType; // instruction type
         std::vector <std::string> tokens = tokenize((char *) request.data());
 
         print_tokens(tokens);
@@ -64,36 +68,36 @@ int run(std::map<std::string, Topic> * topics_map){
         if (tokens[0] == "SUB"){
             if (tokens.size() < 3){
                 reply_msg = "Invalid number of arguments for SUB";
-                inst_type = -1;
+                instType = INVALID_INSTRUCTION;
             }
-            else inst_type = 1;
+            else instType = SUB;
         }
         else if (tokens[0] == "UNSUB"){
             if (tokens.size() < 3){
                 reply_msg = "Invalid number of arguments for UNSUB";
-                inst_type = -1;
+                instType = INVALID_INSTRUCTION;
             }
-            else inst_type = 2;
+            else instType = UNSUB;
         }
         else if (tokens[0] == "GET"){
             if (tokens.size() < 4){
                 reply_msg = "Invalid number of arguments for GET";
-                inst_type = -1;
+                instType = INVALID_INSTRUCTION;
             }
-            else inst_type = 3;
+            else instType = GET;
         }
         else if (tokens[0] == "PUT"){
             if (tokens.size() < 4){
                 reply_msg = "Invalid number of arguments for PUT";
-                inst_type = -1;
+                instType = INVALID_INSTRUCTION;
             }
-            else inst_type = 4;
+            else instType = PUT;
         }
         else {
             reply_msg = "error";
         }
 
-        if (inst_type != -1 && tokens.size() > 2){
+        if (instType != INVALID_INSTRUCTION && tokens.size() > 2){
             std::string client_id;
             std::string topic_name;
             int last_msg_id;
@@ -110,18 +114,18 @@ int run(std::map<std::string, Topic> * topics_map){
             }catch(const std::exception & e){
                 // topic doesn't exist
                 if (tokens[0] == "SUB")
-                    inst_type = 5; // to create a new topic
+                    instType = SUB_NEW_TOPIC; // to create a new topic
                 else{
                     std::cout << "Topic does not exist" << std::endl;
                     reply_msg = "Invalid topic name";
-                    inst_type = -1;
+                    instType = INVALID_INSTRUCTION;
                 }
             }
             Topic * topic;
-            if (inst_type != -1 && inst_type != 5)
+            if (instType != INVALID_INSTRUCTION && instType != SUB_NEW_TOPIC)
                 topic = &(*topics_map).at(topic_name);
-            switch(inst_type){
-                case 1:
+            switch(instType){
+                case SUB:
                     //SUB
                     if (topic->sub(client_id) == 0)
                         reply_msg = "SUB " + client_id + " " + topic_name;
@@ -131,7 +135,7 @@ int run(std::map<std::string, Topic> * topics_map){
                         reply_msg = "PUB error";
                     }
                     break;
-                case 2:
+                case UNSUB:
                     //UNSUB
                     if (topic->unsub(client_id) == 0)
                         reply_msg = "UNSUB " + client_id + " " + topic_name;
@@ -139,7 +143,7 @@ int run(std::map<std::string, Topic> * topics_map){
                         reply_msg = "UNSUB error";
                     }
                     break;
-                case 3:
+                case GET:
                     //GET
                 {
                     if (tokens[3] == "null")
@@ -165,7 +169,7 @@ int run(std::map<std::string, Topic> * topics_map){
                         reply_msg == "error"; //this shouldn't happen
                     break;
                 }
-                case 4:
+                case PUT:
                     //PUT
                 {
                     content = tokens[3];
@@ -178,7 +182,7 @@ int run(std::map<std::string, Topic> * topics_map){
                     reply_msg = "PUT " + client_id + " " + topic_name + " " + new_message.get_content();
                     break;
                 }
-                case 5:
+                case SUB_NEW_TOPIC:
                     //SUB to nonexistent topic
                     Topic new_topic = Topic(topic_name);
                     new_topic.sub(client_id);
