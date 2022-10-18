@@ -8,11 +8,13 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <vector>
+#include <cstring>
 
 std::string STORAGE_DIR = "./Storage";
 
 void sleepForMs(float miliseconds) {
-    usleep(miliseconds);
+    usleep(miliseconds*1000);
 }
 
 void setupStorage(std::string entity){
@@ -59,4 +61,21 @@ int savePost(std::string entityName, std::string topic, std::string message, int
     stream << message; 
     stream.close();
     return 0;
+}
+
+void printTokens(std::vector<std::string> tokens){
+    for (int i = 0; i<tokens.size(); ++i)
+        std::cout << "token " << i << ": " << tokens[i] << std::endl;
+}
+
+std::vector <std::string> tokenize(char * input){
+    std::vector<std::string> res;
+    char *token = std::strtok(input, " ");
+
+    while (token != NULL){
+        res.push_back(std::string(token));
+        //std::cout << token << std::endl;
+        token = strtok(NULL, " ");
+    }
+    return res;
 }

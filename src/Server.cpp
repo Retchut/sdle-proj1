@@ -25,26 +25,9 @@ void printUsage (){
     std::cout << usage << std::endl;
 }
 
-void print_tokens(std::vector<std::string> tokens){
-    for (int i = 0; i<tokens.size(); ++i)
-        std::cout << "token " << i << ": " << tokens[i] << std::endl;
-}
-
-std::vector <std::string> tokenize(char * input){
-    std::vector<std::string> res;
-    char *token = std::strtok(input, " ");
-
-    while (token != NULL){
-        res.push_back(std::string(token));
-        //std::cout << token << std::endl;
-        token = strtok(NULL, " ");
-    }
-    return res;
-}
-
 int run(std::map<std::string, Topic> * topics_map){
 
-    zmq::context_t context (2);
+    zmq::context_t context (3);
     zmq::socket_t socket (context, zmq::socket_type::rep);
     socket.bind ("tcp://*:5555");
     while(true){
@@ -63,7 +46,7 @@ int run(std::map<std::string, Topic> * topics_map){
         InstructionType instType = INVALID_INSTRUCTION; // instruction type
         std::vector <std::string> tokens = tokenize((char *) request.data());
 
-        //print_tokens(tokens);
+        //printTokens(tokens);
 
         if (tokens[0] == "SUB"){
             if (tokens.size() < 3){
