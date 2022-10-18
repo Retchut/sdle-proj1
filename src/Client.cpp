@@ -12,6 +12,9 @@
 int clientID;
 std::string entityName;
 
+std::condition_variable cv;
+int flag;
+
 void printUsage (){
     std::string usage = "Usage:\n\t./client <id>";
     std::cout << usage << std::endl;
@@ -39,19 +42,18 @@ int changeLastMessageID (std::map<std::string, int> &subscribedTopics, std::stri
     return 0;
 }
 
-void timeout(zmq::context_t & context, std::future<void> futureObj){
-    int i = 0;
-    while (i<10 && futureObj.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout)
-    {
-        sleepForMs(500);
-        i++;
+void timeout(zmq::context_t & context){
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lck(mtx);
+    while (cv.wait_for(lck,std::chrono::seconds(5))==std::cv_status::timeout) {
+        std::cout << "Timeout" << std::endl;
+        context.shutdown(); 
+        std::cout << "Closed context" << std::endl;
+        std::cout << "Ending Thread" << std::endl;
+        return;
     }
-    if (futureObj.wait_for(std::chrono::milliseconds(1)) == std::future_status::timeout){
-        try{
-            context.shutdown();
-        }catch (const std::exception & e){
-            std::cout << "HERER" << std::endl;
-        }
+    if (flag == 0){
+        context.shutdown(); 
         std::cout << "Closed context" << std::endl;
     }
     std::cout << "Ending Thread" << std::endl;
@@ -64,11 +66,6 @@ void testClientCommunication(int clientID){
     socket.connect("tcp://127.0.0.1:5555");
 
     std::thread * th;
-    
-    zmq::pollitem_t item;
-    item.socket = socket;
-    item.events = ZMQ_POLLIN;
-    
 
     int i = -1;
     std::string topic_name;
@@ -99,13 +96,12 @@ void testClientCommunication(int clientID){
                 line = "SUB " + std::to_string(clientID) + " Topic1";
             else{
                 line = "PUT  " + std::to_string(clientID) + " Topic1 Ola";
-                for (int j = 0; j<10; ++j)
+                for (int j = 0; j<100; ++j)
                     line += "Broo_";
             }
             std::cout << i << std::endl;
             i++;
             
-
 
             //Send
             zmq::message_t request(line.length());
@@ -114,28 +110,22 @@ void testClientCommunication(int clientID){
             std::cout << "---Sent message: " << line.c_str() << std::endl;
 
             //Get a reply
-            //auto poll_res = zmq::poll(&item, 3);
-            //std::cout << poll_res << std::endl;
+            flag = 0;
+            th = new std::thread(timeout, std::ref(context));
+
             zmq::message_t reply;
-
-
-            //std::thread timeoutThread(timeout);
-            //timeoutThread.req
-
-            std::promise<void> exitSignal; // Create a std::promise object
-            std::future<void> futureObj = exitSignal.get_future();//Fetch std::future object associated with promise
-            th = new std::thread(&timeout, std::ref(context), std::move(futureObj));// Starting Thread & move the future object in lambda function by reference
-
             std::cout << "...Waiting for reply" << std::endl;
             auto size = socket.recv (reply, zmq::recv_flags::none);
+            flag = 1;
+            cv.notify_one(); 
+
             char * reply_c_str = (char *) reply.data();
             reply_c_str[size.value()] = '\0';
             std::cout << "---Reply: " << reply_c_str << std::endl;
             std::cout << "Asking the thread to stop" << std::endl;
 
-            exitSignal.set_value(); //Set the value 
-            //(*th).join(); //Waiting for thread to be joined.
-            //std::cout << "Thread joined" << std::endl;
+            (*th).join(); //Waiting for thread to be joined.
+            std::cout << "Thread joined" << std::endl;
             
             if (i == 200){
                 std::cout << "Sleeping" << std::endl;
