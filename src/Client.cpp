@@ -9,6 +9,15 @@
 
 #include "Utils.h"
 
+enum InstructionType {
+    INVALID_INSTRUCTION = -1,
+    SUB = 1,
+    UNSUB = 2,
+    GET = 3,
+    PUT = 4,
+    SUB_NEW_TOPIC = 5
+};
+
 int clientID;
 std::string entityName;
 
@@ -42,6 +51,13 @@ int changeLastMessageID (std::map<std::string, int> &subscribedTopics, std::stri
     return 0;
 }
 
+int getLastMessageIDFromTopic (std::map<std::string, int> &subscribedTopics, std::string topic) {
+    if(subscribedTopics.find(topic) != subscribedTopics.end()) {
+        return subscribedTopics.at(topic);
+    }
+    return -1;
+}
+
 void timeout(zmq::context_t & context){
     std::mutex mtx;
     std::unique_lock<std::mutex> lck(mtx);
@@ -66,32 +82,59 @@ void testClientCommunication(int clientID){
     socket.connect("tcp://127.0.0.1:5555");
 
     std::thread * th;
+    std::map<std::string, int> subscribedTopics;
 
-    int i = -1;
-    std::string topic_name;
-    if (clientID == 1)
-        topic_name = "2";
-    else topic_name = "1";
-
+    //int i = 0;
     while(true){
         try{
             //Read from stdin
             std::string line;
+
+            std::cout << "Input message:" << std::endl;
+            std::getline(std::cin, line);
+
+            // parse input
+            char *cstr = new char[line.length() + 1];
+            strcpy(cstr, line.c_str());
+            auto tokens = tokenize(cstr);
+
+            InstructionType instType = INVALID_INSTRUCTION;
+
+
+            if (tokens[0] == "SUB"){
+            if (tokens.size() < 3){
+                std::cout << "Invalid number of arguments for SUB" << std::endl;
+                continue;
+            }
+            else instType = SUB;
+            }
+            else if (tokens[0] == "UNSUB"){
+                if (tokens.size() < 3){
+                    std::cout << "Invalid number of arguments for UNSUB" << std::endl;
+                    continue;
+                }
+                else instType = UNSUB;
+            }
+            else if (tokens[0] == "GET"){
+                if (tokens.size() < 4){
+                    std::cout << "Invalid number of arguments for GET" << std::endl;
+                    continue;
+                }
+                else instType = GET;
+            }
+            else if (tokens[0] == "PUT"){
+                if (tokens.size() < 4){
+                    std::cout << "Invalid number of arguments for PUT" << std::endl;
+                    continue;
+                }
+                else instType = PUT;
+            }
+            else {
+                std::cout << "Invalid instruction" << std::endl;
+                continue;
+            }
+
             /*
-            if (i > 2) i = 0;
-            if (i == 0)
-                line = "SUB " + std::to_string(clientID) + " " + topic_name;
-            else if (i == 1)
-                line = "PUT " + std::to_string(clientID) + " " + std::to_string(clientID) + " mensagem_catita" ;
-            else if (i == 2)
-                line = "GET " + std::to_string(clientID) + " " + topic_name + " -1";
-            i++;
-            */
-
-            //std::cout << "Input message:" << std::endl;
-            //std::getline(std::cin, line);
-
-            
             if (i == -1)
                 line = "SUB " + std::to_string(clientID) + " Topic1";
             else{
@@ -101,7 +144,7 @@ void testClientCommunication(int clientID){
             }
             std::cout << i << std::endl;
             i++;
-            
+            */
 
             //Send
             zmq::message_t request(line.length());
@@ -124,14 +167,17 @@ void testClientCommunication(int clientID){
             std::cout << "---Reply: " << reply_c_str << std::endl;
             std::cout << "Asking the thread to stop" << std::endl;
 
+            // Parse reply
+
             (*th).join(); //Waiting for thread to be joined.
             std::cout << "Thread joined" << std::endl;
             
+            /*
             if (i == 200){
                 std::cout << "Sleeping" << std::endl;
                 sleepForMs(5000);
                 i = 0;
-            }
+            } */
             
         }catch (const std::exception & e) {
             std::cout << "Catch: " << e.what() <<  std::endl;
@@ -144,7 +190,7 @@ void testClientCommunication(int clientID){
     // END-Testing
 }
 
-void runClient(){
+void runClient(int clientID){
 
     zmq::context_t context(1);
     zmq::socket_t socket (context, zmq::socket_type::req);
@@ -153,26 +199,88 @@ void runClient(){
     std::map<std::string, int> subscribedTopics;
 
     while (true) {
+
+        //Read from stdin
+        std::string request;
+        std::string instruction;
+        std::cout << "Instruction Type?\n 1. SUB\n 2. UNSUB\n 3. GET\n 4. PUT\n"; 
+        std::getline(std::cin, instruction);
+
+        try {
+            if (stoi(instruction) <= 4 || stoi(instruction) >= 1){
+                request += instruction; //TODO PARSE TO STRING
+            } else {
+                std::cout << "Invalid instruction\n";
+                continue;
+            }
+        }
+        catch(const std::invalid_argument& e){
+            std::cerr << "Invalid argument: " << e.what() << "\n";
+            continue;
+        }
+
+        request += " " + std::to_string(clientID) + " ";
+
+        std::string topic;
+        std::cout << "Topic Type?\n"; 
+        std::getline(std::cin, topic);
+
+        request += topic + " ";
+
+        switch (stoi(instruction)) {
+            case 1:
+                break;
+            case 2:
+                if(subscribedTopics.find(topic) == subscribedTopics.end()) {
+                    std::cerr << "Topic not subscribed: \n";
+                    continue;
+                }
+                break;
+            case 3:
+                request += std::to_string(getLastMessageIDFromTopic(subscribedTopics, topic));
+                break;
+            case 4:
+                std::string content;
+                std::cout << "Insert message:\n"; 
+                std::getline(std::cin, content);
+                request += content;
+        }
         
+        std::cout << "request: " << request << std::endl;
+
+        zmq::message_t requestMsg(request.length());
+
+        //Send
+        memcpy(requestMsg.data(), request.c_str(), request.length());
+        socket.send (requestMsg, zmq::send_flags::none);
+        std::cout << "---Sent message: " << request.c_str() << std::endl;
+
+        //Get a reply
+        zmq::message_t reply;
+        std::cout << "...Waiting for reply" << std::endl;
+        auto size = socket.recv (reply, zmq::recv_flags::none);
+        char * reply_c_str = (char *) reply.data();
+        reply_c_str[size.value()] = '\0';
+        std::cout << "---Reply: " << reply_c_str << std::endl;
     }
 }
 
 int main (int argc, char *argv[]) {
     if(argc == 2){
         try {
-                clientID = std::stoi(std::string(argv[1]));
-            }
-            catch(const std::invalid_argument& e){
-                std::cerr << "Invalid argument: " << e.what() << "\n";
-                printUsage();
-                return 1;
-            }
-            entityName = "Client" + std::to_string(clientID);
-            setupStorage(entityName);
+            clientID = std::stoi(std::string(argv[1]));
+        }
+        catch(const std::invalid_argument& e){
+            std::cerr << "Invalid argument: " << e.what() << "\n";
+            printUsage();
+            return 1;
+        }
+        entityName = "Client" + std::to_string(clientID);
+        setupStorage(entityName);
 
-            std::cout << "Running client " << clientID << std::endl;
-            testClientCommunication(clientID);
-            //runClient();
+        std::cout << "Running client " << clientID << std::endl;
+        testClientCommunication(clientID);
+        //runClient();
     }
     else{
         printUsage();
