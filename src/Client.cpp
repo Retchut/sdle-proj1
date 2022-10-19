@@ -169,7 +169,7 @@ int main (int argc, char *argv[]) {
                 printUsage();
                 return 1;
             }
-            entityName = "client" + std::to_string(clientID);
+            entityName = "Client" + std::to_string(clientID);
             setupStorage(entityName);
 
             std::cout << "Running client " << clientID << std::endl;

@@ -197,13 +197,11 @@ int run(std::map<std::string, Topic> * topics_map){
 }
 
 int main (int argc, char *argv[]) {
-    entityName = "server";
-    setupStorage(entityName);
-    std::map<std::string, Topic> topics_map;
-
     switch(argc){
         case 1:
-            // run server, receiving connections
+            entityName = "server";
+            setupStorage(entityName);
+            std::map<std::string, Topic> topics_map;
             std::cout << "Running server" << std::endl;
             return run(&topics_map);
         default:
