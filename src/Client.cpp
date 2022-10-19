@@ -158,10 +158,8 @@ void runClient(){
 }
 
 int main (int argc, char *argv[]) {
-    switch(argc){
-        case 2:
-        {
-            try {
+    if(argc == 2){
+        try {
                 clientID = std::stoi(std::string(argv[1]));
             }
             catch(const std::invalid_argument& e){
@@ -175,12 +173,9 @@ int main (int argc, char *argv[]) {
             std::cout << "Running client " << clientID << std::endl;
             testClientCommunication(clientID);
             //runClient();
-        }
-            return 0;
-        default:
-            printUsage();
-            return 1;
     }
-
-    return 0;
+    else{
+        printUsage();
+        return 1;
+    }
 }
