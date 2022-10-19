@@ -27,7 +27,7 @@ void printUsage (){
 
 int run(std::map<std::string, Topic> * topics_map){
 
-    zmq::context_t context (3);
+    zmq::context_t context (THREAD_NUM);
     zmq::socket_t socket (context, zmq::socket_type::rep);
     socket.bind ("tcp://*:5555");
     while(true){
