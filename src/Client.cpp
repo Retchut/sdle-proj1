@@ -20,23 +20,23 @@ void printUsage (){
     std::cout << usage << std::endl;
 }
 
-void printSubscribedTopics (std::map<std::string, int> &subscribedTopics) {
-    for (auto itr = subscribedTopics.begin(); itr != subscribedTopics.end(); ++itr) {
+void printSubscribedTopics (std::map<std::string, int> &topicIDs) {
+    for (auto itr = topicIDs.begin(); itr != topicIDs.end(); ++itr) {
         std::cout << itr->first << '\t' << itr->second << '\n';
     }
 }
 
-void subscribeTopic (std::map<std::string, int> &subscribedTopics, std::string topic) {
-    subscribedTopics.insert(std::pair<std::string, int>(topic, -1));
+void subscribeTopic (std::map<std::string, int> &topicIDs, std::string topic) {
+    topicIDs.insert(std::pair<std::string, int>(topic, -1));
 }
 
-int unsubscribeTopic (std::map<std::string, int> &subscribedTopics, std::string topic) {
-    return subscribedTopics.erase(topic);
+int unsubscribeTopic (std::map<std::string, int> &topicIDs, std::string topic) {
+    return topicIDs.erase(topic);
 }
 
-int changeLastMessageID (std::map<std::string, int> &subscribedTopics, std::string topic, int messageID) {
-    if(subscribedTopics.find(topic) != subscribedTopics.end()) {
-        subscribedTopics.at(topic) = messageID;
+int changeLastMessageID (std::map<std::string, int> &topicIDs, std::string topic, int messageID) {
+    if(topicIDs.find(topic) != topicIDs.end()) {
+        topicIDs.at(topic) = messageID;
         return 1;
     }
     return 0;
@@ -168,20 +168,19 @@ int main (int argc, char *argv[]) {
                 return 1;
             }
             entityName = "Client" + std::to_string(clientID);
-            std::map<std::string, int> nextTopicIDs;
+            std::map<std::string, int> topicIDs;
             // checks if the storage location already exists
             if(setupStorage(entityName)){
-                // if the storage location exists, resumes operation from that data
-                if(loadClient(entityName, nextTopicIDs)){
+                // if the storage location exists, resumes operation from that data (subscribing all topics)
+                if(loadClient(entityName, topicIDs)){
                     std::cout << "An error occured while loading the client's data after crashing" << std::endl;
                     return 1;
                 }
-                // missing resubscribing everything
             }
 
             std::cout << "Running client " << clientID << std::endl;
             // return testClientCommunication(clientID);
-            // return runClient(nextTopicIDs);
+            // return runClient(topicIDs);
     }
     else{
         printUsage();
