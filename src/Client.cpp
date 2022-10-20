@@ -6,8 +6,13 @@
 #include <thread>
 #include <chrono>
 #include <future>
+#include <filesystem>
 
 #include "Utils.h"
+
+namespace fs = std::filesystem;
+
+extern std::string STORAGE_DIR;
 
 int clientID;
 std::string entityName;
@@ -57,6 +62,29 @@ void timeout(zmq::context_t & context){
         std::cout << "Closed context" << std::endl;
     }
     std::cout << "Ending Thread" << std::endl;
+}
+
+int loadClient(std::string entity, std::map<std::string, int> &nextTopicIDs){
+    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
+
+    try{
+        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
+
+        // iterate through entries in the client directory
+        for(const auto &entry : it){
+            if(entry.is_directory()){
+                std::string topicName = fs::path(entry).filename();
+                int nextPubID = getNextPostID(entity, topicName);
+                
+                nextTopicIDs.insert({ topicName, nextPubID });
+            }
+        }
+        return 0;
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+    return 1;
 }
 
 int testClientCommunication(int clientID){

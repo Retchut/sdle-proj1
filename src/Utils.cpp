@@ -24,6 +24,7 @@ void sleepForMs(float miliseconds) {
 
 int getNextPostID(std::string entity, std::string topic){
     std::string topicDirectory = STORAGE_DIR + "/" + entity + "/" + topic + "/";
+
     int nextMessageID = 0;
     fs::directory_iterator it;
     try{
@@ -53,56 +54,12 @@ int setupStorage(std::string entity){
     }
     else{
         fs::create_directories(storageDirectory);
-        return 0;
-    }
-}
-
-int loadServer(std::string entity, std::map<std::string, Topic> topicMap, std::map<std::string, int> &pubInts){
-    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
-
-    try{
-        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
-
-        // iterate through entries in the server directory
-        for(const auto &entry : it){
-            if(entry.is_directory()){
-                std::string topicName = fs::path(entry).filename();
-                Topic topicObj = Topic(topicName);
-                int nextPubID = getNextPostID(entity, topicName);
-                
-                topicMap.insert({ topicName, topicObj });
-                pubInts.insert({ topicName, nextPubID });
-            }
+        if(entity == "Server"){
+            std::string subscriberDir = STORAGE_DIR + "/subscribers";
+            fs::create_directories(storageDirectory);
         }
         return 0;
     }
-    catch(const std::exception & e){
-        std::cout << "Caught exception: " << e.what() << "\n";
-    }
-    return 1;
-}
-
-int loadClient(std::string entity, std::map<std::string, int> &nextTopicIDs){
-    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
-
-    try{
-        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
-
-        // iterate through entries in the client directory
-        for(const auto &entry : it){
-            if(entry.is_directory()){
-                std::string topicName = fs::path(entry).filename();
-                int nextPubID = getNextPostID(entity, topicName);
-                
-                nextTopicIDs.insert({ topicName, nextPubID });
-            }
-        }
-        return 0;
-    }
-    catch(const std::exception & e){
-        std::cout << "Caught exception: " << e.what() << "\n";
-    }
-    return 1;
 }
 
 int savePost(std::string entity, std::string topic, std::string message, int postID){

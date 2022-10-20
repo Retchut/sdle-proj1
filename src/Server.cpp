@@ -1,11 +1,18 @@
 #include <iostream>
 #include <zmq.hpp>
+#include <vector>
 #include <map>
 #include <queue>
+#include <filesystem>
+#include <fstream>
 
 #include "Utils.h"
 #include "Topic.h"
 #include "Message.h"
+
+namespace fs = std::filesystem;
+
+extern std::string STORAGE_DIR;
 
 enum InstructionType {
     INVALID_INSTRUCTION = -1,
@@ -18,11 +25,80 @@ enum InstructionType {
 
 int THREAD_NUM = 2;
 std::string entityName;
-std::map<int, std::string> messageMap;
 
 void printUsage (){
     std::string usage = "Usage:\n\t./server";
     std::cout << usage << std::endl;
+}
+
+void addSubscriber(std::string topicName, int clientID){
+    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/";
+
+    try{
+        std::string path = subscribersDirectory + std::to_string(clientID);
+        std::ofstream ofs(subscribersDirectory);
+        ofs.close();
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+}
+
+void createSubscribersFile(std::string topic, int clientID){
+    std::string subscribersDir = STORAGE_DIR + "/" + entityName + "/subscribers/" + topic + "/";
+    try{
+        if(!fs::exists(subscribersDir))
+            fs::create_directories(subscribersDir);
+        std::string path = subscribersDir + std::to_string(clientID);
+        std::ofstream ofs(path);
+        ofs.close();
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+}
+
+int loadServer(std::string entity, std::map<std::string, std::vector<int>> &subscriberMap, std::map<std::string, Topic> &topicMap, std::map<std::string, int> &pubInts){
+    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
+    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/";
+
+    try{
+        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
+
+        // iterate through entries in the server directory
+        for(const auto &entry : it){
+            if(entry.is_directory()){
+                std::string topicName = fs::path(entry).filename();
+                Topic topicObj = Topic(topicName);
+                int nextPubID = getNextPostID(entity, topicName);
+                
+                topicMap.insert({ topicName, topicObj });
+                pubInts.insert({ topicName, nextPubID });
+            }
+        }
+
+        fs::directory_iterator subIt = fs::directory_iterator(subscribersDirectory);
+
+        // iterate through entries in the subscribers directory
+        for(const auto &entry : subIt){
+            if(entry.is_directory()){
+                fs::directory_iterator topicIt = fs::directory_iterator(entry.path());
+                std::string topicName = entry.path().filename();
+                subscriberMap.insert({ topicName, std::vector<int>() });
+                auto subMapEntry = subscriberMap.find(topicName);
+                for(const auto &client : topicIt){
+                    int clientID = std::stoi(client.path().filename());
+                    subMapEntry->second.push_back(clientID);
+                }
+            }
+        }
+        std::cout << "Successfully loaded server" << std::endl;
+        return 0;
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+    return 1;
 }
 
 int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * pubInts){
@@ -110,8 +186,17 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
             switch(instType){
                 case SUB:
                     //SUB
-                    if (topic->sub(client_id) == 0)
+                    if (topic->sub(client_id) == 0){
                         reply_msg = "SUB " + client_id + " " + topic_name;
+                        int client_idInt;
+                        try{
+                            client_idInt = stoi(client_id);
+                            addSubscriber(topic->get_name(), stoi(client_id));
+                        }
+                        catch(std::exception e){
+                            std::cout << "Caught exception while attempting to add a subscriber: " << e.what() << std::endl;
+                        }
+                    }
                     else if (topic->sub(client_id) == 1)
                         reply_msg = "RESUB " + client_id + " " + topic_name;
                     else{
@@ -199,12 +284,13 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
 int main (int argc, char *argv[]) {
     if(argc == 1){
         entityName = "Server";
+        std::map<std::string, std::vector<int>> subscriberMap;
         std::map<std::string, Topic> topicsMap;
         std::map<std::string, int> pubInts;
         // checks if the storage location already exists
         if(setupStorage(entityName)){
             // if the storage location exists, resumes operation from that data
-            if(loadServer(entityName, topicsMap, pubInts)){
+            if(loadServer(entityName, subscriberMap, topicsMap, pubInts)){
                 std::cout << "An error occured while loading the server's data after crashing" << std::endl;
                 return 1;
             }
