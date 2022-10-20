@@ -59,7 +59,7 @@ void timeout(zmq::context_t & context){
     std::cout << "Ending Thread" << std::endl;
 }
 
-void testClientCommunication(int clientID){
+int testClientCommunication(int clientID){
     // Testing
     zmq::context_t context(1);
     zmq::socket_t socket (context, zmq::socket_type::req);
@@ -141,20 +141,20 @@ void testClientCommunication(int clientID){
         }
     }
     testClientCommunication(clientID);
-    // END-Testing
+    return 0;
 }
 
-void runClient(){
+int runClient(std::map<std::string, int> &nextTopicIDs){
 
     zmq::context_t context(1);
     zmq::socket_t socket (context, zmq::socket_type::req);
     socket.connect("tcp://127.0.0.1:5555");
 
-    std::map<std::string, int> subscribedTopics;
 
-    while (true) {
+    // while (true) {
         
-    }
+    // }
+    return 0;
 }
 
 int main (int argc, char *argv[]) {
@@ -168,11 +168,20 @@ int main (int argc, char *argv[]) {
                 return 1;
             }
             entityName = "Client" + std::to_string(clientID);
-            setupStorage(entityName);
+            std::map<std::string, int> nextTopicIDs;
+            // checks if the storage location already exists
+            if(setupStorage(entityName)){
+                // if the storage location exists, resumes operation from that data
+                if(loadClient(entityName, nextTopicIDs)){
+                    std::cout << "An error occured while loading the client's data after crashing" << std::endl;
+                    return 1;
+                }
+                // missing resubscribing everything
+            }
 
             std::cout << "Running client " << clientID << std::endl;
-            testClientCommunication(clientID);
-            //runClient();
+            // return testClientCommunication(clientID);
+            // return runClient(nextTopicIDs);
     }
     else{
         printUsage();

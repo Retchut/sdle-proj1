@@ -11,24 +11,24 @@
 #include <vector>
 #include <cstring>
 
+#include "Topic.h"
+#include "Message.h"
+
+namespace fs = std::filesystem;
+
 std::string STORAGE_DIR = "./Storage";
 
 void sleepForMs(float miliseconds) {
     usleep(miliseconds*1000);
 }
 
-void setupStorage(std::string entity){
-    std::string directories = STORAGE_DIR + "/" + entity;
-    std::filesystem::create_directories(directories);
-}
-
-int getNextPostID(std::string entityName, std::string topic){
-    std::string topicDirectory = STORAGE_DIR + "/" + entityName + "/" + topic + "/";
+int getNextPostID(std::string entity, std::string topic){
+    std::string topicDirectory = STORAGE_DIR + "/" + entity + "/" + topic + "/";
     int nextMessageID = 0;
-    std::filesystem::directory_iterator it;
+    fs::directory_iterator it;
     try{
-        std::filesystem::create_directory(topicDirectory);
-        it = std::filesystem::directory_iterator(topicDirectory);
+        fs::create_directory(topicDirectory);
+        it = fs::directory_iterator(topicDirectory);
     }
     catch(const std::exception & e){
         std::cout << "Caught exception: " << e.what() << "\n";
@@ -45,11 +45,71 @@ int getNextPostID(std::string entityName, std::string topic){
     return nextMessageID;
 }
 
-int savePost(std::string entityName, std::string topic, std::string message, int postID){
-    int nextPostID = getNextPostID(entityName, topic);
-    std::string path = STORAGE_DIR + "/" + entityName + "/" + topic + "/";
+int setupStorage(std::string entity){
+    std::string storageDirectory = STORAGE_DIR + "/" + entity;
+    // if the directory already exists, we try to recover from the crash
+    if(fs::exists(storageDirectory)){
+        return 1;
+    }
+    else{
+        fs::create_directories(storageDirectory);
+        return 0;
+    }
+}
+
+int loadServer(std::string entity, std::map<std::string, Topic> topicMap, std::map<std::string, int> &pubInts){
+    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
+
     try{
-        std::filesystem::create_directories(path);
+        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
+
+        // iterate through entries in the server directory
+        for(const auto &entry : it){
+            if(entry.is_directory()){
+                std::string topicName = fs::path(entry).filename();
+                Topic topicObj = Topic(topicName);
+                int nextPubID = getNextPostID(entity, topicName);
+                
+                topicMap.insert({ topicName, topicObj });
+                pubInts.insert({ topicName, nextPubID });
+            }
+        }
+        return 0;
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+    return 1;
+}
+
+int loadClient(std::string entity, std::map<std::string, int> &nextTopicIDs){
+    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
+
+    try{
+        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
+
+        // iterate through entries in the client directory
+        for(const auto &entry : it){
+            if(entry.is_directory()){
+                std::string topicName = fs::path(entry).filename();
+                int nextPubID = getNextPostID(entity, topicName);
+                
+                nextTopicIDs.insert({ topicName, nextPubID });
+            }
+        }
+        return 0;
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+    return 1;
+}
+
+int savePost(std::string entity, std::string topic, std::string message, int postID){
+    int nextPostID = getNextPostID(entity, topic);
+    std::string path = STORAGE_DIR + "/" + entity + "/" + topic + "/";
+    try{
+        fs::create_directories(path);
         path = path + std::to_string(postID);
     }
     catch(const std::exception & e){

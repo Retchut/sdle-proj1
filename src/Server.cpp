@@ -4,8 +4,8 @@
 #include <queue>
 
 #include "Utils.h"
-#include "Message.h"
 #include "Topic.h"
+#include "Message.h"
 
 enum InstructionType {
     INVALID_INSTRUCTION = -1,
@@ -25,7 +25,7 @@ void printUsage (){
     std::cout << usage << std::endl;
 }
 
-int run(std::map<std::string, Topic> * topics_map){
+int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * pubInts){
 
     zmq::context_t context (3);
     zmq::socket_t socket (context, zmq::socket_type::rep);
@@ -90,10 +90,10 @@ int run(std::map<std::string, Topic> * topics_map){
             client_id = tokens[1];
             topic_name = tokens[2];
 
-            //std::map<std::string, Topic>::iterator topic_pair = topics_map->find(topic_name);
+            //std::map<std::string, Topic>::iterator topic_pair = topicsMap->find(topic_name);
             
             try {
-                (*topics_map).at(topic_name);
+                (*topicsMap).at(topic_name);
             }catch(const std::exception & e){
                 // topic doesn't exist
                 if (tokens[0] == "SUB")
@@ -106,7 +106,7 @@ int run(std::map<std::string, Topic> * topics_map){
             }
             Topic * topic;
             if (instType != INVALID_INSTRUCTION && instType != SUB_NEW_TOPIC)
-                topic = &(*topics_map).at(topic_name);
+                topic = &(*topicsMap).at(topic_name);
             switch(instType){
                 case SUB:
                     //SUB
@@ -169,15 +169,15 @@ int run(std::map<std::string, Topic> * topics_map){
                     //SUB to nonexistent topic
                     Topic new_topic = Topic(topic_name);
                     new_topic.sub(client_id);
-                    topics_map->insert(std::pair<std::string, Topic>(topic_name, new_topic));
+                    topicsMap->insert(std::pair<std::string, Topic>(topic_name, new_topic));
 
                     reply_msg = "SUB " + client_id + " " + topic_name;
                     break;
             }
         }
 
-        // Show topics_map
-        for (auto it = (*topics_map).begin(); it!=(*topics_map).end(); ++it){
+        // Show topicsMap
+        for (auto it = (*topicsMap).begin(); it!=(*topicsMap).end(); ++it){
             std::cout << "->Topic " << it->first << ":\n";
             it->second.show();
         }
@@ -198,11 +198,22 @@ int run(std::map<std::string, Topic> * topics_map){
 
 int main (int argc, char *argv[]) {
     if(argc == 1){
-        entityName = "server";
-        setupStorage(entityName);
-        std::map<std::string, Topic> topics_map;
+        entityName = "Server";
+        std::map<std::string, Topic> topicsMap;
+        std::map<std::string, int> pubInts;
+        // checks if the storage location already exists
+        if(setupStorage(entityName)){
+            // if the storage location exists, resumes operation from that data
+            if(loadServer(entityName, topicsMap, pubInts)){
+                std::cout << "An error occured while loading the server's data after crashing" << std::endl;
+                return 1;
+            }
+            // missing resubscribing client for every topic?
+            //      requires saving when a client subscribes/unsubscribes in a directory then reading?
+        }
         std::cout << "Running server" << std::endl;
-        return run(&topics_map);
+        // return run(&topicsMap, &pubInts);
+        return 0;
     }
     else{
         printUsage();
