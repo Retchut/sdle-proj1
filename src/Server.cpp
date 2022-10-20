@@ -298,7 +298,7 @@ int main (int argc, char *argv[]) {
             //      requires saving when a client subscribes/unsubscribes in a directory then reading?
         }
         std::cout << "Running server" << std::endl;
-        // return run(&topicsMap, &pubInts);
+        return run(&topicsMap, &pubInts);
         return 0;
     }
     else{
