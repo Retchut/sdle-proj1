@@ -121,6 +121,12 @@ int testClientCommunication(int clientID){
             std::cout << "Input message:" << std::endl;
             std::getline(std::cin, line);
 
+            if (line.length() == 0)
+            {
+                std::cout << "Invalid command" << std::endl;
+                continue;
+            }
+
             // parse input
             char *cstr = new char[line.length() + 1];
             strcpy(cstr, line.c_str());
@@ -314,7 +320,7 @@ int main (int argc, char *argv[]) {
             }
 
             std::cout << "Running client " << clientID << std::endl;
-            // return testClientCommunication(clientID);
+            return testClientCommunication(clientID);
             // return runClient(topicIDs);
     }
     else{
