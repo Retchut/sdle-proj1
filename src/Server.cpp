@@ -58,28 +58,13 @@ void createSubscribersFile(std::string topic, int clientID){
     }
 }
 
-int loadServer(std::string entity, std::map<std::string, std::vector<int>> &subscriberMap, std::map<std::string, Topic> &topicMap, std::map<std::string, int> &pubInts){
-    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
-    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/";
-
-    try{
-        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
-
-        // iterate through entries in the server directory
-        for(const auto &entry : it){
-            if(entry.is_directory()){
-                std::string topicName = fs::path(entry).filename();
-                Topic topicObj = Topic(topicName);
-                int nextPubID = getNextPostID(entity, topicName);
-                
-                topicMap.insert({ topicName, topicObj });
-                pubInts.insert({ topicName, nextPubID });
-            }
-        }
-
-        fs::directory_iterator subIt = fs::directory_iterator(subscribersDirectory);
-
+std::map<std::string, std::vector<int>> recoverSubscribers(std::string subscribersDirectory){
         // iterate through entries in the subscribers directory
+        // and build map mapping the topic strings to the topic subscribers
+    std::map<std::string, std::vector<int>> subscriberMap;
+    
+    try {
+        fs::directory_iterator subIt = fs::directory_iterator(subscribersDirectory);
         for(const auto &entry : subIt){
             if(entry.is_directory()){
                 fs::directory_iterator topicIt = fs::directory_iterator(entry.path());
@@ -90,6 +75,39 @@ int loadServer(std::string entity, std::map<std::string, std::vector<int>> &subs
                     int clientID = std::stoi(client.path().filename());
                     subMapEntry->second.push_back(clientID);
                 }
+            }
+        }
+    }
+    catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+
+    return subscriberMap;
+}
+
+int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::map<std::string, int> &pubInts){
+    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
+
+    try{
+        std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/";
+        std::map<std::string, std::vector<int>> subMap = recoverSubscribers(subscribersDirectory);
+
+        // iterate through entries in the server directory
+        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
+        for(const auto &entry : it){
+            if(entry.is_directory()){
+                std::string topicName = fs::path(entry).filename();
+                auto topicSubIt = subMap.find(topicName);
+                
+                Topic topicObj = Topic(topicName);
+                for(int i = 0; i < topicSubIt->second.size(); i++){
+                    int subbedID = topicSubIt->second.at(i);
+                    topicObj.sub(std::to_string(subbedID));
+                }
+
+                int nextPubID = getNextPostID(entity, topicName);
+                topicMap.insert({ topicName, topicObj });
+                pubInts.insert({ topicName, nextPubID });
             }
         }
         std::cout << "Successfully loaded server" << std::endl;
@@ -284,13 +302,12 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
 int main (int argc, char *argv[]) {
     if(argc == 1){
         entityName = "Server";
-        std::map<std::string, std::vector<int>> subscriberMap;
         std::map<std::string, Topic> topicsMap;
         std::map<std::string, int> pubInts;
         // checks if the storage location already exists
         if(setupStorage(entityName)){
             // if the storage location exists, resumes operation from that data
-            if(loadServer(entityName, subscriberMap, topicsMap, pubInts)){
+            if(loadServer(entityName, topicsMap, pubInts)){
                 std::cout << "An error occured while loading the server's data after crashing" << std::endl;
                 return 1;
             }
