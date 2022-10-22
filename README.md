@@ -7,13 +7,14 @@ Install cppzmq by running:
 $ sudo apt install libzmq3-dev
 ```
 
-Then, make sure CMake is installed and run:
+Make sure CMake is installed and run:
 
 ```bash
 $ ./build.sh
 ```
-Executables should now be in folder build.
+If everything executed without any errors, the client and server executables should now be in folder build.
 
+## Assignment details
 SDLE First Assignment of group T&lt;m&gt;&lt;n&gt;G&lt;p&gt;&lt;q&gt;.
 
 Group members:

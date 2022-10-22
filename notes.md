@@ -2,7 +2,7 @@ Posts guardados em /storage/ClientID/topic/postID e /storage/server/topic/postID
 
 SUBSCRIBE: \
   Mensagem: `SUB <clientID> <topic>` \
-  resposta do servidor: `SUB <clientID> <topic>` | `RESUBS <clientID> <topic>`\
+  resposta do servidor: `SUB <clientID> <topic>` | `RESUB <clientID> <topic>`\
 
 UNSUBSCRIBE:\
   Mensagem: `UNSUB <clientID> <topic>` \

@@ -200,7 +200,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     else if (topic->sub(client_id) == 1)
                         reply_msg = "RESUB " + client_id + " " + topic_name;
                     else{
-                        reply_msg = "PUB error";
+                        reply_msg = "SUB error";
                     }
                     break;
                 case UNSUB:
@@ -228,7 +228,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     }
                     Message msg = topic->get(client_id, last_msg_id);
                     if (msg.get_id() != -1 && msg.get_id() != -2)
-                        reply_msg = std::to_string(msg.get_id()) + " " + msg.get_content();
+                        reply_msg = "GET " + std::to_string(msg.get_id()) + " " + msg.get_content();
                     else if(msg.get_id() == -1)
                         reply_msg = "error_1";
                     else if(msg.get_id() == -2)
