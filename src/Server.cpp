@@ -43,6 +43,7 @@ void deleteSubscriberFile(std::string topicName, int clientID){
         }
         fs::remove(subscriberFile);
 
+        // if there are no subscribers, we clean up the storage directory
         if(fs::is_empty(topicSubDir)){
             if(!fs::exists(topicSubDir)){
                 std::cout << "Subscriber directory for topic " << topicName << " does not exist." << std::endl;
