@@ -9,7 +9,9 @@
 
 
 Topic::Topic(std::string topic_name): name(topic_name){};
-Topic::~Topic(){};
+Topic::~Topic(){
+    //std::cout << "Deconstructing " + this->name << std::endl;
+};
 
 int Topic::sub(std::string client_id){
     try {
@@ -28,8 +30,11 @@ int Topic::unsub(std::string client_id){
         // client not subscribed
         return 1;
     }
-    else
+    else{
+        if (client_msg_queues.size() == 0)
+            return 2;
         return 0;
+    }
 }
 
 // unnecessary?

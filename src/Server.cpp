@@ -254,12 +254,20 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     break;
                 case UNSUB:
                     //UNSUB
-                    if (topic->unsub(client_id) == 0)
+                {
+                    int unsub_res = topic->unsub(client_id);
+                    if (unsub_res == 0){
+                        std::cout << topicsMap->size() << std::endl;
                         reply_msg = "UNSUB " + client_id + " " + topic_name;
+                    }else if (unsub_res == 2){
+                        (*topicsMap).erase(topic->get_name());
+                        reply_msg = "UNSUB " + client_id + " " + topic_name;
+                    }
                     else{
                         reply_msg = "UNSUB error";
                     }
                     break;
+                }
                 case GET:
                     //GET
                 {
