@@ -48,14 +48,17 @@ int getNextPostID(std::string entity, std::string topic){
 
 int setupStorage(std::string entity){
     std::string storageDirectory = STORAGE_DIR + "/" + entity;
-    // if the directory already exists, we try to recover from the crash
     if(fs::exists(storageDirectory)){
         return 1;
     }
     else{
         fs::create_directories(storageDirectory);
         if(entity == "Server"){
-            std::string subscriberDir = STORAGE_DIR + "/subscribers";
+            std::string subscribersDirectory = STORAGE_DIR + "/Subscribers";
+            // if the directory already exists, we try to recover from the crash
+            if(!fs::exists(subscribersDirectory)){
+                fs::create_directories(subscribersDirectory);
+            }
             fs::create_directories(storageDirectory);
         }
         return 0;
