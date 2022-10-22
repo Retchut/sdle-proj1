@@ -257,10 +257,11 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                 {
                     int unsub_res = topic->unsub(client_id);
                     if (unsub_res == 0){
-                        std::cout << topicsMap->size() << std::endl;
+                        deleteSubscriberFile(topic_name, std::stoi(client_id));
                         reply_msg = "UNSUB " + client_id + " " + topic_name;
                     }else if (unsub_res == 2){
-                        (*topicsMap).erase(topic->get_name());
+                        (*topicsMap).erase(topic->get_name()); // Delete topic from topicsMap (this client was the last subscriber)
+                        deleteSubscriberFile(topic_name, std::stoi(client_id));
                         reply_msg = "UNSUB " + client_id + " " + topic_name;
                     }
                     else{
