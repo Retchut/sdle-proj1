@@ -292,15 +292,17 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
     std::string clientID;
     std::string topic;
     std::string postid;
+    std::string content;
     ss >> instruction >> clientID >> topic;
-    std::cout << instruction <<std::endl;
 
     switch (getInstructionType(instruction.c_str())){
         case SUB:
             subscribeTopic(subscribedTopics, topic);
+            std::cout << topic << " subscribed with success\n";
             break;
         case UNSUB:
             unsubscribeTopic(subscribedTopics, topic);
+            std::cout << topic << " unsubscribed with success\n";
         case RESUB:
             if(subscribedTopics.find(topic) == subscribedTopics.end()){
                 subscribeTopic(subscribedTopics, topic);
@@ -308,15 +310,36 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
                 std::cout << "Already subscribed to topic:\n" << topic << std::endl;
             }
         case GET:
-            ss >> postid;
+            ss >> postid >> content;
+            std::cout << "Message received from topic " << topic << ": " << content << std::endl;
             changeLastMessageID(subscribedTopics, topic, stoi(postid));
+            break;
         case PUT:
-
+            std::cout << "Posted message with success\n";
+            break;
         default:
             break;
     }
     for(auto i: subscribedTopics) {
         std::cout << i.first << "   " << i.second << std::endl;
+    }
+}
+
+void updateFiles(std::map<std::string, int> &subscribedTopics, std::string entityName) {
+    std::string path = STORAGE_DIR + "/" + entityName + "/";
+
+    for(const auto &topic: subscribedTopics) {
+        
+        std::ofstream outdata;
+        outdata.open(path + topic.first); 
+
+        if(!outdata) {
+            std::cout << "File " << path + topic.first << " couldn't be opened" << std::endl;
+            return;
+        }
+
+        outdata << topic.second;
+        outdata.close();
     }
 }
 
@@ -347,7 +370,7 @@ void runClient(char* argv[], int argc){
         case UNSUB:
         case GET:
             if(subscribedTopics.find(topic) == subscribedTopics.end()) {
-                std::cerr << "Topic not subscribed: " << topic << std::endl;
+                std::cout << "Topic not subscribed: " << topic << std::endl;
                 return;
             }
             break;
@@ -363,6 +386,7 @@ void runClient(char* argv[], int argc){
         // get request string
         std::stringstream ss;
         std::string sep = " ";
+    
         for(int i=1; i<argc; ++i) {
             ss << argv[i] << sep;
         }
@@ -395,11 +419,13 @@ void runClient(char* argv[], int argc){
         char * reply_c_str = (char *) reply.data();
         reply_c_str[size.value()] = '\0';
         std::cout << "---Reply: " << reply_c_str << std::endl;
-        parseReply(reply_c_str, size.value(), subscribedTopics);
         std::cout << "Asking the thread to stop" << std::endl;
         
         (*th).join(); //Waiting for thread to be joined.
         std::cout << "Thread joined" << std::endl;
+
+        parseReply(reply_c_str, size.value(), subscribedTopics);
+        updateFiles(subscribedTopics, entityName);
     }
     catch (const std::exception & e) {
         std::cout << "Catch: " << e.what() <<  std::endl;
