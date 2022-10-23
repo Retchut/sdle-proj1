@@ -35,20 +35,29 @@ std::string subscriberFileRead(std::string topicName, std::string clientID){
 }
 
 void subscriberFilePop(std::string topicName, std::string clientID){
-    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
-
-    return;
-}
-
-void subscriberFilePush(std::string topicName, std::string clientID){
     std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
 
     std::string oldFileContents = subscriberFileRead(topicName, clientID);
+
+    std::ifstream ifs(subscriberFileDirectory);
+
+
     std::ofstream ofs(subscriberFileDirectory);
     
     ofs << clientID;
     ofs << " ";
     ofs << oldFileContents;
+    ofs.close();
+    return;
+}
+
+void subscriberFilePush(std::string topicName, std::string clientID, std::string newID){
+    std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+
+    std::string oldFileContents = subscriberFileRead(topicName, clientID);
+    std::ofstream ofs(subscriberFileDirectory);
+    
+    ofs << oldFileContents << " " << newID;
     ofs.close();
     return;
 }
