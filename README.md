@@ -24,3 +24,21 @@ $ ./build.sh
 ```
 If everything executed without any errors, the client and server executables should now be in folder "build".
 
+Inside the build directory, to run Client do:
+
+#### GET | SUB | UNSUB
+
+```bash
+$ ./Client <GET|SUB|UNSUB> <clientID> <topic>
+```
+
+#### PUT 
+
+```bash
+$ ./Client PUT <clientID> <topic> <content>
+```
+
+To run Server do:
+
+```bash
+$ ./Server
