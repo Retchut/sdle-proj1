@@ -1,7 +1,7 @@
 # SDLE First Assignment
 
 ## Group Composition
-SDLE First Assignment of group T03G12;.
+SDLE First Assignment of group T03G12.
 
 Group members:
 
