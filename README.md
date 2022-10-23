@@ -1,18 +1,44 @@
 # SDLE First Assignment
 
-## Instructions
-```c++
-$ cd ./src
-$ cmake -S . -B ./build
-$ cd ./build
-$ make
-```
-
-SDLE First Assignment of group T&lt;m&gt;&lt;n&gt;G&lt;p&gt;&lt;q&gt;.
+## Group Composition
+SDLE First Assignment of group T03G12.
 
 Group members:
 
-1. &lt;first name&gt; &lt;family name&gt; (&lt;email address&gt;)
-2. &lt;first name&gt; &lt;family name&gt; (&lt;email address&gt;)
-3. &lt;first name&gt; &lt;family name&gt; (&lt;email address&gt;)
-4. &lt;first name&gt; &lt;family name&gt; (&lt;email address&gt;)
+- Óscar Esteves up201906834@fe.up.pt
+- Mário Travassos up201905871@fe.up.pt
+- Adelaide Santos up201907487@fe.up.pt
+- Luís Guimarães up202204188@fe.up.pt
+
+## Instructions
+Install cppzmq by running:
+
+```bash
+$ sudo apt install libzmq3-dev
+```
+
+Make sure CMake is installed and run:
+
+```bash
+$ ./build.sh
+```
+If everything executed without any errors, the client and server executables should now be in folder "build".
+
+Inside the build directory, to run Client do:
+
+#### GET | SUB | UNSUB
+
+```bash
+$ ./Client <GET|SUB|UNSUB> <clientID> <topic>
+```
+
+#### PUT 
+
+```bash
+$ ./Client PUT <clientID> <topic> <content>
+```
+
+To run Server do:
+
+```bash
+$ ./Server
