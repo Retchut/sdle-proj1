@@ -37,17 +37,20 @@ std::string subscriberFileRead(std::string topicName, std::string clientID){
 void subscriberFilePop(std::string topicName, std::string clientID){
     std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
 
-    std::string oldFileContents = subscriberFileRead(topicName, clientID);
+    // read file contents and discard the oldest id
+    std::stringstream oldFileStream(subscriberFileRead(topicName, clientID));
+    std::ofstream newSubFile(subscriberFileDirectory);
 
-    std::ifstream ifs(subscriberFileDirectory);
+    std::string readID;
+    oldFileStream >> readID; // discard the first item
 
+    // write file contents to the file, without the first item
+    while(oldFileStream >> readID){
+        newSubFile << readID << " ";
+    }
 
-    std::ofstream ofs(subscriberFileDirectory);
+    newSubFile.close();
     
-    ofs << clientID;
-    ofs << " ";
-    ofs << oldFileContents;
-    ofs.close();
     return;
 }
 
