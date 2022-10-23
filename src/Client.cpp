@@ -8,6 +8,7 @@
 #include <future>
 #include <filesystem>
 #include <sstream>
+#include <fstream>
 
 #include "Utils.h"
 
@@ -94,7 +95,7 @@ void timeout(zmq::context_t & context){
     std::cout << "Ending Thread" << std::endl;
 }
 
-int loadClient(std::string entity, std::map<std::string, int> &nextTopicIDs){
+int loadClient(std::string entity, std::map<std::string, int> &subscribedTopics){
     std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
 
     try{
@@ -102,11 +103,14 @@ int loadClient(std::string entity, std::map<std::string, int> &nextTopicIDs){
 
         // iterate through entries in the client directory
         for(const auto &entry : it){
-            if(entry.is_directory()){
+            if(!entry.is_directory()){
                 std::string topicName = fs::path(entry).filename();
-                int nextPubID = getNextPostID(entity, topicName);
-                
-                nextTopicIDs.insert({ topicName, nextPubID });
+                //read last ID post from topic file
+                std::ifstream iss(storageDirectory + topicName);
+                std::string lastIDPost;
+                iss >> lastIDPost;
+
+                subscribedTopics.insert({topicName, stoi(lastIDPost)});
             }
         }
         return 0;
@@ -240,6 +244,10 @@ int testClientCommunication(int clientID){
 
 int checkInstruction(int argc, char *argv[]){
 
+    if(argc == 1) {
+        std::cout << "Invalid instruction." << std::endl;
+        return 1;
+    }
     InstructionType instType = getInstructionType(argv[1]);
 
     switch (instType) {
@@ -264,7 +272,7 @@ int checkInstruction(int argc, char *argv[]){
         break;
         case INVALID_INSTRUCTION:
         default:
-            std::cout << "Invalid instrunction." << std::endl;
+            std::cout << "Invalid instruction." << std::endl;
             return 1;
         break;
     }
@@ -272,15 +280,26 @@ int checkInstruction(int argc, char *argv[]){
     return 0;
 }
 
-void runClient(std::map<std::string, int> &subscribedTopics, char* argv[], int argc){
-    
-    zmq::context_t context(1);
-    zmq::socket_t socket (context, zmq::socket_type::req);
-    socket.connect("tcp://127.0.0.1:5555");
+void runClient(char* argv[], int argc){
+
+    std::string clientID = argv[2];
+    entityName = "Client" + clientID;
+    std::map<std::string, int> subscribedTopics;
+
+    // checks if the storage location already exists
+    if(setupStorage(entityName)){
+        // if the storage location exists, resumes operation from that data (subscribing all topics)
+        if(loadClient(entityName, subscribedTopics)){
+            std::cout << "An error occured while loading the client's data after crashing" << std::endl;
+            return;
+        }
+
+    }
 
     char *instruction = argv[1];
     char *topic = argv[3];
 
+    //Check if instruction is valid for a certain client and its subscribed topics
     switch (getInstructionType(instruction)) {
         case SUB:
         case PUT:
@@ -295,29 +314,51 @@ void runClient(std::map<std::string, int> &subscribedTopics, char* argv[], int a
         default:
             break;
     }
-    
-    // get request string
-    std::stringstream ss;
-    std::string sep = " ";
-    for(int i=1; i < argc; ++i) {
-        ss << argv[i] << sep;
+    std::thread * th;
+    try {
+        zmq::context_t context(1);
+        zmq::socket_t socket (context, zmq::socket_type::req);
+        socket.connect("tcp://127.0.0.1:5555");
+        
+        // get request string
+        std::stringstream ss;
+        std::string sep = " ";
+        for(int i=1; i<argc; ++i) {
+            ss << argv[i] << sep;
+        }
+        std::string request = ss.str();
+
+        zmq::message_t requestMsg(request.length());
+
+        //Send
+        std::cout << request << std::endl;
+        memcpy(requestMsg.data(), request.c_str(), request.length());
+        socket.send (requestMsg, zmq::send_flags::none);
+        std::cout << "---Sent message: " << request.c_str() << std::endl;
+
+        //Get a reply
+        flag = 0;
+        th = new std::thread(timeout, std::ref(context));
+
+        zmq::message_t reply;
+        std::cout << "...Waiting for reply" << std::endl;
+        auto size = socket.recv (reply, zmq::recv_flags::none);
+        flag = 1;
+        cv.notify_one(); 
+
+        char * reply_c_str = (char *) reply.data();
+        reply_c_str[size.value()] = '\0';
+        std::cout << "---Reply: " << reply_c_str << std::endl;
+        std::cout << "Asking the thread to stop" << std::endl;
+        
+        (*th).join(); //Waiting for thread to be joined.
+        std::cout << "Thread joined" << std::endl;
     }
-    std::string request = ss.str();
-
-    zmq::message_t requestMsg(request.length());
-
-    //Send
-    memcpy(requestMsg.data(), request.c_str(), request.length());
-    socket.send (requestMsg, zmq::send_flags::none);
-    std::cout << "---Sent message: " << request.c_str() << std::endl;
-
-    //Get a reply
-    zmq::message_t reply;
-    std::cout << "...Waiting for reply" << std::endl;
-    auto size = socket.recv (reply, zmq::recv_flags::none);
-    char * reply_c_str = (char *) reply.data();
-    reply_c_str[size.value()] = '\0';
-    std::cout << "---Reply: " << reply_c_str << std::endl;
+    catch (const std::exception & e) {
+        std::cout << "Catch: " << e.what() <<  std::endl;
+        (*th).join();
+        std::cout << "Thread joined" << std::endl;
+    }
 
 }
 
@@ -328,21 +369,7 @@ int main (int argc, char *argv[]) {
         return 1;
     }
 
-    std::map<std::string, int> topicIDs;
+    runClient(argv, argc);
 
-    runClient(topicIDs, argv, argc);
-
-    //std::cout << "Running client " << clientID << std::endl;
-
-    std::string ah = argv[2];
-    entityName = "Client" + ah;
-    // checks if the storage location already exists
-    if(setupStorage(entityName)){
-        // if the storage location exists, resumes operation from that data (subscribing all topics)
-        if(loadClient(entityName, topicIDs)){
-            std::cout << "An error occured while loading the client's data after crashing" << std::endl;
-            return 1;
-        }
-    }
     return 0;
 }
