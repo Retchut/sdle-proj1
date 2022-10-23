@@ -144,7 +144,14 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
                     Topic topicObj = Topic(topicName);
 
                     for(int i = 0; i < topicSubIt->second.size(); i++){
-                        std::cout << topicSubIt->second.size() << std::endl;
+                        // subscribe
+                        std::string subID = std::to_string(i);
+                        topicObj.sub(subID);
+                        std::ifstream ifs(subscribersDirectory + topicName + "/" + subID);
+                        std::string subFileContents;
+                        std::getline(ifs, subFileContents);
+                        topicObj.loadQueue(subID, subFileContents)
+                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  i << std::endl;
                         int subbedID = topicSubIt->second.at(i);
                         topicObj.sub(std::to_string(subbedID));
                     }
