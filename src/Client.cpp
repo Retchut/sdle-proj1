@@ -28,10 +28,10 @@ InstructionType getInstructionType(char* instruction) {
 
     InstructionType instType;
 
-    if (strcmp(instruction, "SUB")) instType = SUB;
-    else if (strcmp(instruction, "UNSUB")) instType = UNSUB;
-    else if (strcmp(instruction, "GET")) instType = GET;
-    else if (strcmp(instruction, "PUT")) instType = PUT;
+    if (strcmp(instruction, "SUB") == 0) instType = SUB;
+    else if (strcmp(instruction, "UNSUB")  == 0) instType = UNSUB;
+    else if (strcmp(instruction, "GET")  == 0) instType = GET;
+    else if (strcmp(instruction, "PUT")  == 0) instType = PUT;
     else instType = INVALID_INSTRUCTION;
 
     return instType;
@@ -240,13 +240,7 @@ int testClientCommunication(int clientID){
 
 int checkInstruction(int argc, char *argv[]){
 
-    InstructionType instType;
-
-    if(strcmp(argv[1], "SUB")) instType = SUB;
-    else if (strcmp(argv[1], "UNSUB")) instType = UNSUB;
-    else if (strcmp(argv[1], "GET")) instType = GET;
-    else if (strcmp(argv[1], "PUT")) instType = PUT;
-    else instType = INVALID_INSTRUCTION;
+    InstructionType instType = getInstructionType(argv[1]);
 
     switch (instType) {
         case SUB:
@@ -268,8 +262,10 @@ int checkInstruction(int argc, char *argv[]){
                 return 1;
             }
         break;
+        case INVALID_INSTRUCTION:
         default:
             std::cout << "Invalid instrunction." << std::endl;
+            return 1;
         break;
     }
 
@@ -327,12 +323,12 @@ void runClient(std::map<std::string, int> &subscribedTopics, char* argv[], int a
 
 
 int main (int argc, char *argv[]) {
-
-    std::map<std::string, int> topicIDs;
     
     if (checkInstruction(argc, argv)) {
         return 1;
     }
+
+    std::map<std::string, int> topicIDs;
 
     runClient(topicIDs, argv, argc);
 
