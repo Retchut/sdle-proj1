@@ -14,11 +14,17 @@ Topic::~Topic(){
 };
 
 
-void Topic::loadQueue(int clientID, std::string content){
+void Topic::loadQueue(int clientID, std::vector<int> messageIDs, std::vector<std::string> messageContents){
 
-    return;
     auto clientID_str = std::to_string(clientID);
-    client_msg_queues.at(clientID_str);
+    auto client_queue = client_msg_queues.at(clientID_str);
+
+    for (int i = 0; i < messageIDs.size(); ++i){
+        auto new_message = Message(messageIDs[i], messageContents[i]);
+        client_queue.push(new_message);
+        new_message.show();
+    }
+
 
 }
 

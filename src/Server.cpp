@@ -148,9 +148,24 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
                         int subbedID = topicSubIt->second.at(i);
                         topicObj.sub(std::to_string(subbedID));
 
-                        std::string subFileContents = subscriberFileRead(topicName, std::to_string(subbedID));
-                        topicObj.loadQueue(subbedID, subFileContents);
-                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  i << std::endl;
+                        std::string messageIDs = subscriberFileRead(topicName, std::to_string(subbedID));
+
+                        std::vector<int> messageIDs_array;
+                        std::istringstream is(messageIDs);
+                        std::string part;
+                        while (std::getline(is, part, ' ')){
+                            try{
+                                messageIDs_array.push_back(std::stoi(part));
+                                std::cout << part << std::endl;
+                            }
+                            catch (const std::exception & e){
+                                std::cout << "Read invalid message ID" << std::endl;
+                            }
+                        }
+
+
+                        //topicObj.loadQueue(subbedID, messageIDs_array, messageContents_array);
+                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  subbedID << std::endl;
                     }
 
                     int nextPubID = getNextPostID(entity, topicName);
