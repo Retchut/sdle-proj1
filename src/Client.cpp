@@ -47,7 +47,7 @@ std::condition_variable cv;
 int flag;
 
 void printUsage (){
-    std::string usage = "Usage:\n\t./client <id>";
+    std::string usage = "Usage:\n\t./Client <GET|SUB|UNSUB> <clientID> <topic>\nor\n\t./Client PUT <clientID> <topic> <content>";
     std::cout << usage << std::endl;
 }
 
@@ -62,6 +62,8 @@ void subscribeTopic (std::map<std::string, int> &topicIDs, std::string topic) {
 }
 
 int unsubscribeTopic (std::map<std::string, int> &topicIDs, std::string topic) {
+    std::string userTopicMessage = STORAGE_DIR + "/" + entityName + "/" + topic;
+    fs::remove(userTopicMessage);
     auto it = topicIDs.find(topic);
     topicIDs.erase(it);
     return 0;
@@ -129,7 +131,7 @@ int loadClient(std::string entity, std::map<std::string, int> &subscribedTopics)
 int checkInstruction(int argc, char *argv[]){
 
     if(argc == 1) {
-        std::cout << "Invalid instruction." << std::endl;
+        printUsage();
         return 1;
     }
     InstructionType instType = getInstructionType(argv[1]);
@@ -139,24 +141,27 @@ int checkInstruction(int argc, char *argv[]){
         case UNSUB:
             if(argc != 4){
                 std::cout << "Invalid number of arguments for " << argv[1] << std::endl;
+                printUsage();
                 return 1;
             }
         break;
         case GET:
             if(argc != 4){
                 std::cout << "Invalid number of arguments for " << argv[1] << std::endl;
+                printUsage();
                 return 1;
             }
         break;
         case PUT:
             if(argc < 5){
                 std::cout << "Invalid number of arguments for " << argv[1] << std::endl;
+                printUsage();
                 return 1;
             }
         break;
         case INVALID_INSTRUCTION:
         default:
-            std::cout << "Invalid instruction." << std::endl;
+            printUsage();
             return 1;
         break;
     }
@@ -168,7 +173,7 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
     // get request string
 
     if(strcmp(reply, "error_2") == 0) {
-        std::cout << "No messages to show yet\n";
+        std::cout << "No new messages to show yet\n";
     } 
 
     std::stringstream ss(reply);
@@ -206,6 +211,7 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
             std::cout << "Posted message with success\n";
             break;
         default:
+            std::cout << "Unable to complete the operation with success\n";
             break;
     }
 }
@@ -281,13 +287,11 @@ void runClient(char* argv[], int argc){
         //Add last post ID in GET request
         if(getInstructionType(instruction) == GET) {
             request += std::to_string(getLastMessageIDFromTopic(subscribedTopics, topic));
-            std::cout << request;
         }
 
         zmq::message_t requestMsg(request.length());
 
         //Send
-        std::cout << request << std::endl;
         memcpy(requestMsg.data(), request.c_str(), request.length());
         socket.send (requestMsg, zmq::send_flags::none);
         std::cout << "---Sent message: " << request.c_str() << std::endl;
