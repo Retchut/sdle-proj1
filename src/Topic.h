@@ -13,19 +13,19 @@ public:
     ~Topic();
 
     void loadQueue(int clientID, std::vector<int> messageIDs, std::vector<std::string> messageContents);
-    int sub(std::string client_id);
-    int unsub(std::string client_id);
+    int sub(int client_id);
+    int unsub(int client_id);
 
     int put(Message msg);
-    Message get(std::string client_id, int last_msg_id);
-    int rem(std::string client_id);
+    Message get(int client_id, int last_msg_id);
+    int rem(int client_id);
 
     std::string get_name();
     void show();
 
 private:
     std::string name;
-    std::map<std::string, std::queue <Message>> client_msg_queues;
+    std::map<int, std::queue <Message>> client_msg_queues;
 
 };
 

@@ -16,8 +16,7 @@ Topic::~Topic(){
 
 void Topic::loadQueue(int clientID, std::vector<int> messageIDs, std::vector<std::string> messageContents){
 
-    auto clientID_str = std::to_string(clientID);
-    auto client_queue = &client_msg_queues.at(clientID_str);
+    auto client_queue = &client_msg_queues.at(clientID);
 
     for (int i = 0; i < messageIDs.size(); ++i){
         auto new_message = Message(messageIDs[i], messageContents[i]);
@@ -25,19 +24,19 @@ void Topic::loadQueue(int clientID, std::vector<int> messageIDs, std::vector<std
     }
 }
 
-int Topic::sub(std::string client_id){
+int Topic::sub(int client_id){
     try {
         client_msg_queues.at(client_id);
         // client is already subscribed (i.e. has a queue)
         return 1;
     }catch(const std::exception & e){
         //client_msg_queues[client_id] = std::queue<Message>();
-        client_msg_queues.insert(std::pair<std::string, std::queue<Message>>(client_id, std::queue<Message>()));
+        client_msg_queues.insert(std::pair<int, std::queue<Message>>(client_id, std::queue<Message>()));
         client_msg_queues.at(client_id);
     }
     return 0;
 }
-int Topic::unsub(std::string client_id){
+int Topic::unsub(int client_id){
     if (client_msg_queues.erase(client_id) == 0){
         // client not subscribed
         return 1;
@@ -50,16 +49,16 @@ int Topic::unsub(std::string client_id){
 }
 
 // unnecessary?
-int Topic::rem(std::string client_id){
+int Topic::rem(int client_id){
     client_msg_queues.erase(client_id);
     return 0;
 }
 
 // puts a message in a topic (in every client's queue)
 int Topic::put(Message msg){
-    for (std::map<std::string, std::queue <Message>>::iterator it = client_msg_queues.begin(); it!=client_msg_queues.end(); ++it){
+    for (std::map<int, std::queue <Message>>::iterator it = client_msg_queues.begin(); it!=client_msg_queues.end(); ++it){
         it->second.push(msg);
-        subscriberFilePush(name, it->first, std::to_string(msg.get_id()));
+        subscriberFilePush(name, std::to_string(it->first), std::to_string(msg.get_id()));
         //std::cout << "Pushed " << it->second.back().get_content() << std::endl;
     }
     return 0;
@@ -68,7 +67,7 @@ int Topic::put(Message msg){
 // 
 // last_msg_id: the ID of the last message the client has received
 //
-Message Topic::get(std::string client_id, int last_msg_id){
+Message Topic::get(int client_id, int last_msg_id){
     std::queue<Message> * queue;
     try {
         queue = &client_msg_queues.at(client_id);
@@ -76,18 +75,18 @@ Message Topic::get(std::string client_id, int last_msg_id){
         return Message(-1, "");
     }
 
-    Message front_message = queue->front();
-    if (queue->size() > 0 && front_message.get_id() == last_msg_id){
+    if (queue->size() > 0 && queue->front().get_id() == last_msg_id){
         queue->pop();
-        front_message = queue->front();
-        subscriberFilePop(name, client_id);
-
+        std::cout << "2" << std::endl;
+        
+        std::cout << name << " " << client_id << std::endl;
+        subscriberFilePop(name, std::to_string(client_id));
     }
 
     if (queue->size() < 1)
         return Message(-2, "");
+    return queue->front();
 
-    return front_message;
 }
 
 std::string Topic::get_name(){
@@ -96,7 +95,7 @@ std::string Topic::get_name(){
 
 void Topic::show(){
     // show client ids and their queue size
-    for (std::map<std::string, std::queue <Message>>::iterator it = client_msg_queues.begin(); it!=client_msg_queues.end(); ++it){
+    for (std::map<int, std::queue <Message>>::iterator it = client_msg_queues.begin(); it!=client_msg_queues.end(); ++it){
         std::cout << "client " << it->first << ": " << it->second.size() << std::endl;
         if (it->second.size() > 0){
             std::cout << "_front: ";

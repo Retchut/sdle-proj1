@@ -134,7 +134,7 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
                     for(int i = 0; i < topicSubIt->second.size(); i++){
                         // subscribe
                         int subbedID = topicSubIt->second.at(i);
-                        topicObj.sub(std::to_string(subbedID));
+                        topicObj.sub(subbedID);
 
                         std::string messageIDs = subscriberFileRead(topicName, std::to_string(subbedID));
 
@@ -147,7 +147,7 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
                                 std::cout << "+ loading message " << part << " in topic " << topicName << std::endl;
                             }
                             catch (const std::exception & e){
-                                std::cout << "Read invalid message ID: " << part << std::endl;
+                                //std::cout << "Read invalid message ID: " << part << std::endl;
                             }
                         }
 
@@ -237,14 +237,20 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
             reply_msg = "error";
         }
 
+        int client_id;
+        try {
+            client_id = std::stoi(tokens[1]);
+        }catch(const std::exception & e){
+            reply_msg = "Invalid client ID. Must be an integer";
+            instType = INVALID_INSTRUCTION;
+        }
+
         if (instType != INVALID_INSTRUCTION && tokens.size() > 2){
-            std::string client_id;
             std::string topic_name;
             int last_msg_id;
             std::string content;
 
-            // read first two arguments (which are common for all instruction types)
-            client_id = tokens[1];
+            // common for all instruction types
             topic_name = tokens[2];
 
             //std::map<std::string, Topic>::iterator topic_pair = topicsMap->find(topic_name);
@@ -268,17 +274,16 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                 case SUB:
                     //SUB
                     if (topic->sub(client_id) == 0){
-                        reply_msg = "SUB " + client_id + " " + topic_name;
+                        reply_msg = "SUB " + std::to_string(client_id) + " " + topic_name;
                         try{
-                            auto client_idInt = stoi(client_id);
-                            createSubscribersFile(topic_name, client_idInt);
+                            createSubscribersFile(topic_name, client_id);
                         }
                         catch(std::exception e){
                             std::cout << "Caught exception while attempting to add a subscriber: " << e.what() << std::endl;
                         }
                     }
                     else if (topic->sub(client_id) == 1)
-                        reply_msg = "RESUB " + client_id + " " + topic_name;
+                        reply_msg = "RESUB " + std::to_string(client_id) + " " + topic_name;
                     else{
                         reply_msg = "SUB error";
                     }
@@ -288,12 +293,12 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                 {
                     int unsub_res = topic->unsub(client_id);
                     if (unsub_res == 0){
-                        deleteSubscriberFile(topic_name, std::stoi(client_id));
-                        reply_msg = "UNSUB " + client_id + " " + topic_name;
+                        deleteSubscriberFile(topic_name, client_id);
+                        reply_msg = "UNSUB " + std::to_string(client_id) + " " + topic_name;
                     }else if (unsub_res == 2){
                         (*topicsMap).erase(topic_name); // Delete topic from topicsMap (this client was the last subscriber)
-                        deleteSubscriberFile(topic_name, std::stoi(client_id));
-                        reply_msg = "UNSUB " + client_id + " " + topic_name;
+                        deleteSubscriberFile(topic_name, client_id);
+                        reply_msg = "UNSUB " + std::to_string(client_id) + " " + topic_name;
                     }
                     else{
                         reply_msg = "UNSUB error";
@@ -315,16 +320,20 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                             break;
                         }
                     }
+                    
                     Message msg = topic->get(client_id, last_msg_id);
+                    
                     if (msg.get_id() != -1 && msg.get_id() != -2)
-                        reply_msg = "GET " + client_id + " " + topic_name + " " + std::to_string(msg.get_id()) + " " + msg.get_content();
+                        reply_msg = "GET " + std::to_string(client_id)+ " " + topic_name + " " + std::to_string(msg.get_id()) + " " + msg.get_content();
                     else if(msg.get_id() == -1)
                         reply_msg = "error_1";
                     else if(msg.get_id() == -2)
                         reply_msg = "error_2";
                     else 
                         reply_msg == "error"; //this shouldn't happen
+                    
                     break;
+                    
                 }
                 case PUT:
                     //PUT
@@ -336,7 +345,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     topic->put(new_message);
 
                     savePost(entityName, topic->get_name(), content, new_message.get_id());
-                    reply_msg = "PUT " + client_id + " " + topic_name + " " + new_message.get_content();
+                    reply_msg = "PUT " + std::to_string(client_id) + " " + topic_name + " " + new_message.get_content();
                     break;
                 }
                 case SUB_NEW_TOPIC:
@@ -344,9 +353,9 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     Topic new_topic = Topic(topic_name);
                     new_topic.sub(client_id);
                     topicsMap->insert(std::pair<std::string, Topic>(topic_name, new_topic));
-                    createSubscribersFile(topic_name, stoi(client_id));
+                    createSubscribersFile(topic_name, client_id);
 
-                    reply_msg = "SUB " + client_id + " " + topic_name;
+                    reply_msg = "SUB " + std::to_string(client_id) + " " + topic_name;
                     break;
             }
         }

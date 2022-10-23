@@ -32,11 +32,17 @@ std::string readMessageContents(std::string topicName, std::string messageID){
     return message;
 }
 
+bool is_empty(std::ifstream& pFile)
+{
+    return pFile.peek() == std::ifstream::traits_type::eof();
+}
+
 std::string subscriberFileRead(std::string topicName, std::string clientID){
     std::string subscriberFilePath = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
     std::string contents;
-
     std::ifstream ifs(subscriberFilePath);
+    if (is_empty(ifs))
+        return "";
     std::string subFileContents;
     std::getline(ifs, contents);
     ifs.close();
@@ -51,12 +57,15 @@ void subscriberFilePop(std::string topicName, std::string clientID){
     std::stringstream oldFileStream(subscriberFileRead(topicName, clientID));
     std::ofstream newSubFile(subscriberFilePath);
 
-    std::string readID;
-    oldFileStream >> readID; // discard the first item
 
-    // write file contents to the file, without the first item
-    while(oldFileStream >> readID){
-        newSubFile << readID << " ";
+    std::string readID;
+    if (oldFileStream.rdbuf()->in_avail() != 0){
+        oldFileStream >> readID; // discard the first item
+        
+        // write file contents to the file, without the first item
+        while(oldFileStream >> readID){
+            newSubFile << readID << " ";
+        }
     }
 
     newSubFile.close();
