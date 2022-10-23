@@ -27,7 +27,7 @@ int THREAD_NUM = 2;
 std::string entityName;
 
 void printUsage (){
-    std::string usage = "Usage:\n\t./server";
+    std::string usage = "Usage:\n\t./Server";
     std::cout << usage << std::endl;
 }
 
@@ -189,7 +189,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
             std::cout << "->Topic " << it->first << ":\n";
             it->second.show();
         }
-        
+
         zmq::message_t request;
 
         std::cout << "...Waiting for message" << std::endl;
