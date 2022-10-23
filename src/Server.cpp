@@ -145,13 +145,12 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
 
                     for(int i = 0; i < topicSubIt->second.size(); i++){
                         // subscribe
-                        std::string subID = std::to_string(i);
-                        topicObj.sub(subID);
-                        std::string subFileContents = subscriberFileRead(topicName, subID);
-                        topicObj.loadQueue(subID, subFileContents)
-                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  i << std::endl;
                         int subbedID = topicSubIt->second.at(i);
                         topicObj.sub(std::to_string(subbedID));
+
+                        std::string subFileContents = subscriberFileRead(topicName, std::to_string(subbedID));
+                        topicObj.loadQueue(subbedID, subFileContents);
+                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  i << std::endl;
                     }
 
                     int nextPubID = getNextPostID(entity, topicName);
@@ -312,7 +311,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     }
                     Message msg = topic->get(client_id, last_msg_id);
                     if (msg.get_id() != -1 && msg.get_id() != -2)
-                        reply_msg = "GET " + std::to_string(msg.get_id()) + " " + msg.get_content();
+                        reply_msg = "GET " + client_id + " " + topic_name + " " + std::to_string(msg.get_id()) + " " + msg.get_content();
                     else if(msg.get_id() == -1)
                         reply_msg = "error_1";
                     else if(msg.get_id() == -2)
