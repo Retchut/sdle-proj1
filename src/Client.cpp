@@ -286,6 +286,11 @@ int checkInstruction(int argc, char *argv[]){
 
 void parseReply(char* reply, int replySize, std::map<std::string, int> &subscribedTopics) {
     // get request string
+
+    if(strcmp(reply, "error_2") == 0) {
+        std::cout << "No messages to show yet\n";
+    } 
+
     std::stringstream ss(reply);
 
     std::string instruction;
@@ -320,9 +325,6 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
         default:
             break;
     }
-    for(auto i: subscribedTopics) {
-        std::cout << i.first << "   " << i.second << std::endl;
-    }
 }
 
 void updateFiles(std::map<std::string, int> &subscribedTopics, std::string entityName) {
@@ -330,16 +332,16 @@ void updateFiles(std::map<std::string, int> &subscribedTopics, std::string entit
 
     for(const auto &topic: subscribedTopics) {
         
-        std::ofstream outdata;
-        outdata.open(path + topic.first); 
+        std::ofstream fileStream;
+        fileStream.open(path + topic.first); 
 
-        if(!outdata) {
+        if(!fileStream) {
             std::cout << "File " << path + topic.first << " couldn't be opened" << std::endl;
             return;
         }
 
-        outdata << topic.second;
-        outdata.close();
+        fileStream << topic.second;
+        fileStream.close();
     }
 }
 
@@ -418,11 +420,11 @@ void runClient(char* argv[], int argc){
 
         char * reply_c_str = (char *) reply.data();
         reply_c_str[size.value()] = '\0';
-        std::cout << "---Reply: " << reply_c_str << std::endl;
-        std::cout << "Asking the thread to stop" << std::endl;
+        //std::cout << "---Reply: " << reply_c_str << std::endl;
+        //std::cout << "Asking the thread to stop" << std::endl;
         
         (*th).join(); //Waiting for thread to be joined.
-        std::cout << "Thread joined" << std::endl;
+        //std::cout << "Thread joined" << std::endl;
 
         parseReply(reply_c_str, size.value(), subscribedTopics);
         updateFiles(subscribedTopics, entityName);
