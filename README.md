@@ -1,7 +1,7 @@
 # SDLE First Assignment
 
 ## Group Composition
-SDLE First Assignment of group T&lt;m&gt;&lt;n&gt;G&lt;p&gt;&lt;q&gt;.
+SDLE First Assignment of group T03G12;.
 
 Group members:
 
