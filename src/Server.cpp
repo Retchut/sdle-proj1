@@ -27,7 +27,7 @@ int THREAD_NUM = 2;
 std::string entityName;
 
 void printUsage (){
-    std::string usage = "Usage:\n\t./server";
+    std::string usage = "Usage:\n\t./Server";
     std::cout << usage << std::endl;
 }
 
@@ -66,6 +66,7 @@ void addSubscriber(std::string topicName, int clientID){
     std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/";
 
     try{
+        std::cout << "Adding subscriber" << std::endl;
         std::string path = subscribersDirectory + std::to_string(clientID);
         std::ofstream ofs(subscribersDirectory);
         ofs.close();
@@ -76,7 +77,7 @@ void addSubscriber(std::string topicName, int clientID){
 }
 
 void createSubscribersFile(std::string topic, int clientID){
-    std::string subscribersDir = STORAGE_DIR + "/" + entityName + "/Subscribers/" + topic + "/";
+    std::string subscribersDir = STORAGE_DIR + "/Subscribers/" + topic + "/";
     try{
         if(!fs::exists(subscribersDir))
             fs::create_directories(subscribersDir);
@@ -97,14 +98,22 @@ std::map<std::string, std::vector<int>> recoverSubscribers(std::string subscribe
     try {
         fs::directory_iterator subIt = fs::directory_iterator(subscribersDirectory);
         for(const auto &entry : subIt){
+            std::cout << "here rec subs" << std::endl;
             if(entry.is_directory()){
                 fs::directory_iterator topicIt = fs::directory_iterator(entry.path());
                 std::string topicName = entry.path().filename();
-                subscriberMap.insert({ topicName, std::vector<int>() });
+
+                std::cout << topicName << std::endl;
+
+                //subscriberMap.insert({ topicName, std::vector<int>() });
+                subscriberMap.insert(std::pair<std::string, std::vector<int>>(topicName, std::vector<int>()));
+                
                 auto subMapEntry = subscriberMap.find(topicName);
                 for(const auto &client : topicIt){
                     int clientID = std::stoi(client.path().filename());
                     subMapEntry->second.push_back(clientID);
+                    
+                    std::cout << subMapEntry->second.size() << std::endl;
                 }
             }
         }
@@ -124,21 +133,31 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
         std::map<std::string, std::vector<int>> subMap = recoverSubscribers(subscribersDirectory);
 
         // iterate through entries in the server directory
-        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
-        for(const auto &entry : it){
-            if(entry.is_directory()){
-                std::string topicName = fs::path(entry).filename();
-                auto topicSubIt = subMap.find(topicName);
-                
-                Topic topicObj = Topic(topicName);
-                for(int i = 0; i < topicSubIt->second.size(); i++){
-                    int subbedID = topicSubIt->second.at(i);
-                    topicObj.sub(std::to_string(subbedID));
-                }
+        if (!subMap.empty()){
+            fs::directory_iterator it = fs::directory_iterator(storageDirectory);
+            for(const auto &entry : it){
+                if(entry.is_directory()){
+                    std::string topicName = fs::path(entry).filename();
+                    auto topicSubIt = subMap.find(topicName);
 
-                int nextPubID = getNextPostID(entity, topicName);
-                topicMap.insert({ topicName, topicObj });
-                pubInts.insert({ topicName, nextPubID });
+
+                    Topic topicObj = Topic(topicName);
+
+                    for(int i = 0; i < topicSubIt->second.size(); i++){
+                        // subscribe
+                        int subbedID = topicSubIt->second.at(i);
+                        topicObj.sub(std::to_string(subbedID));
+
+                        std::string subFileContents = subscriberFileRead(topicName, std::to_string(subbedID));
+                        topicObj.loadQueue(subbedID, subFileContents);
+                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  i << std::endl;
+                    }
+
+                    int nextPubID = getNextPostID(entity, topicName);
+                    topicMap.insert({ topicName, topicObj });
+                    pubInts.insert({ topicName, nextPubID });
+                    
+                }
             }
         }
         std::cout << "Successfully loaded server" << std::endl;
@@ -156,6 +175,12 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
     zmq::socket_t socket (context, zmq::socket_type::rep);
     socket.bind ("tcp://*:5555");
     while(true){
+        // Show topicsMap
+        for (auto it = (*topicsMap).begin(); it!=(*topicsMap).end(); ++it){
+            std::cout << "->Topic " << it->first << ":\n";
+            it->second.show();
+        }
+
         zmq::message_t request;
 
         std::cout << "...Waiting for message" << std::endl;
@@ -240,7 +265,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                         int client_idInt;
                         try{
                             client_idInt = stoi(client_id);
-                            addSubscriber(topic->get_name(), stoi(client_id));
+                            addSubscriber(topic_name, stoi(client_id));
                         }
                         catch(std::exception e){
                             std::cout << "Caught exception while attempting to add a subscriber: " << e.what() << std::endl;
@@ -257,10 +282,11 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                 {
                     int unsub_res = topic->unsub(client_id);
                     if (unsub_res == 0){
-                        std::cout << topicsMap->size() << std::endl;
+                        deleteSubscriberFile(topic_name, std::stoi(client_id));
                         reply_msg = "UNSUB " + client_id + " " + topic_name;
                     }else if (unsub_res == 2){
-                        (*topicsMap).erase(topic->get_name());
+                        (*topicsMap).erase(topic_name); // Delete topic from topicsMap (this client was the last subscriber)
+                        deleteSubscriberFile(topic_name, std::stoi(client_id));
                         reply_msg = "UNSUB " + client_id + " " + topic_name;
                     }
                     else{
@@ -285,7 +311,7 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     }
                     Message msg = topic->get(client_id, last_msg_id);
                     if (msg.get_id() != -1 && msg.get_id() != -2)
-                        reply_msg = "GET " + std::to_string(msg.get_id()) + " " + msg.get_content();
+                        reply_msg = "GET " + client_id + " " + topic_name + " " + std::to_string(msg.get_id()) + " " + msg.get_content();
                     else if(msg.get_id() == -1)
                         reply_msg = "error_1";
                     else if(msg.get_id() == -2)
@@ -312,16 +338,11 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     Topic new_topic = Topic(topic_name);
                     new_topic.sub(client_id);
                     topicsMap->insert(std::pair<std::string, Topic>(topic_name, new_topic));
+                    createSubscribersFile(topic_name, stoi(client_id));
 
                     reply_msg = "SUB " + client_id + " " + topic_name;
                     break;
             }
-        }
-
-        // Show topicsMap
-        for (auto it = (*topicsMap).begin(); it!=(*topicsMap).end(); ++it){
-            std::cout << "->Topic " << it->first << ":\n";
-            it->second.show();
         }
 
         //std::cout << "___sleeping___" << std::endl;

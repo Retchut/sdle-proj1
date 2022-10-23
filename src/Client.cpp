@@ -88,15 +88,15 @@ void timeout(zmq::context_t & context){
     while (cv.wait_for(lck,std::chrono::seconds(5))==std::cv_status::timeout) {
         std::cout << "Timeout" << std::endl;
         context.shutdown(); 
-        std::cout << "Closed context" << std::endl;
-        std::cout << "Ending Thread" << std::endl;
+        //std::cout << "Closed context" << std::endl;
+        //std::cout << "Ending Thread" << std::endl;
         return;
     }
     if (flag == 0){
         context.shutdown(); 
         std::cout << "Closed context" << std::endl;
     }
-    std::cout << "Ending Thread" << std::endl;
+    //std::cout << "Ending Thread" << std::endl;
 }
 
 int loadClient(std::string entity, std::map<std::string, int> &subscribedTopics){
@@ -221,12 +221,12 @@ int testClientCommunication(int clientID){
             char * reply_c_str = (char *) reply.data();
             reply_c_str[size.value()] = '\0';
             std::cout << "---Reply: " << reply_c_str << std::endl;
-            std::cout << "Asking the thread to stop" << std::endl;
+            //std::cout << "Asking the thread to stop" << std::endl;
 
             // Parse reply
 
             (*th).join(); //Waiting for thread to be joined.
-            std::cout << "Thread joined" << std::endl;
+            //std::cout << "Thread joined" << std::endl;
             
             /*
             if (i == 200){
@@ -236,9 +236,9 @@ int testClientCommunication(int clientID){
             } */
             
         }catch (const std::exception & e) {
-            std::cout << "Catch: " << e.what() <<  std::endl;
+            //std::cout << "Catch: " << e.what() <<  std::endl;
             (*th).join();
-            std::cout << "Thread joined" << std::endl;
+            //std::cout << "Thread joined" << std::endl;
             break;
         }
     }
@@ -309,7 +309,7 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
             }
         case GET:
             ss >> postid;
-            //changeLastMessageID(subscribedTopics, topic, )
+            changeLastMessageID(subscribedTopics, topic, stoi(postid));
         case PUT:
 
         default:
@@ -368,8 +368,9 @@ void runClient(char* argv[], int argc){
         }
         std::string request = ss.str();
 
+        //Add last post ID in GET request
         if(getInstructionType(instruction) == GET) {
-            request += getLastMessageIDFromTopic(subscribedTopics, topic);
+            request += std::to_string(getLastMessageIDFromTopic(subscribedTopics, topic));
             std::cout << request;
         }
 

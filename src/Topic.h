@@ -12,6 +12,7 @@ public:
     Topic(std::string topic_name);
     ~Topic();
 
+    void loadQueue(int clientID, std::string topicName);
     int sub(std::string client_id);
     int unsub(std::string client_id);
 

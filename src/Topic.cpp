@@ -13,6 +13,15 @@ Topic::~Topic(){
     //std::cout << "Deconstructing " + this->name << std::endl;
 };
 
+
+void Topic::loadQueue(int clientID, std::string content){
+
+    return;
+    auto clientID_str = std::to_string(clientID);
+    client_msg_queues.at(clientID_str);
+
+}
+
 int Topic::sub(std::string client_id){
     try {
         client_msg_queues.at(client_id);

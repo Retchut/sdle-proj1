@@ -7,5 +7,5 @@
 | Make sure CMake is installed and run:                                                                        |
 | $ ./build.sh                                                                                                 |
 |                                                                                                              |
-| If everything executed without any errors, the client and server executables should now be in folder build.  |
+| If everything executed without any errors, the client and server executables should now be in folder "build".|
 +──────────────────────────────────────────────────────────────────────────────────────────────────────────────+

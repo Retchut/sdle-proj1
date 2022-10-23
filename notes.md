@@ -10,7 +10,9 @@ UNSUBSCRIBE:\
 
 GET:\
   Mensagem: `GET <clientID> <topic> <last post ID>` \
+
   resposta do servidor: `GET <clientID> <topic> <postid> <conteúdo eventual>` | `error`\
+
 
 PUT:\
   Mensagem: `PUT <clientID> <topic> <conteúdo eventual>` \
