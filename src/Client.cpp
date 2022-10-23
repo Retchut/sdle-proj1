@@ -125,126 +125,6 @@ int loadClient(std::string entity, std::map<std::string, int> &subscribedTopics)
     return 1;
 }
 
-int testClientCommunication(int clientID){
-    // Testing
-    zmq::context_t context(1);
-    zmq::socket_t socket (context, zmq::socket_type::req);
-    socket.connect("tcp://127.0.0.1:5555");
-
-    std::thread * th;
-    std::map<std::string, int> subscribedTopics;
-
-    //int i = 0;
-    while(true){
-        try{
-            //Read from stdin
-            std::string line;
-
-            std::cout << "Input message:" << std::endl;
-            std::getline(std::cin, line);
-
-            if (line.length() == 0)
-            {
-                std::cout << "Invalid command" << std::endl;
-                continue;
-            }
-
-            // parse input
-            char *cstr = new char[line.length() + 1];
-            strcpy(cstr, line.c_str());
-            auto tokens = tokenize(cstr);
-
-            InstructionType instType = INVALID_INSTRUCTION;
-
-
-            if (tokens[0] == "SUB"){
-            if (tokens.size() < 3){
-                std::cout << "Invalid number of arguments for SUB" << std::endl;
-                continue;
-            }
-            else instType = SUB;
-            }
-            else if (tokens[0] == "UNSUB"){
-                if (tokens.size() < 3){
-                    std::cout << "Invalid number of arguments for UNSUB" << std::endl;
-                    continue;
-                }
-                else instType = UNSUB;
-            }
-            else if (tokens[0] == "GET"){
-                if (tokens.size() < 4){
-                    std::cout << "Invalid number of arguments for GET" << std::endl;
-                    continue;
-                }
-                else instType = GET;
-            }
-            else if (tokens[0] == "PUT"){
-                if (tokens.size() < 4){
-                    std::cout << "Invalid number of arguments for PUT" << std::endl;
-                    continue;
-                }
-                else instType = PUT;
-            }
-            else {
-                std::cout << "Invalid instruction" << std::endl;
-                continue;
-            }
-
-            /*
-            if (i == -1)
-                line = "SUB " + std::to_string(clientID) + " Topic1";
-            else{
-                line = "PUT  " + std::to_string(clientID) + " Topic1 Ola";
-                for (int j = 0; j<100; ++j)
-                    line += "Broo_";
-            }
-            std::cout << i << std::endl;
-            i++;
-            */
-
-            //Send
-            zmq::message_t request(line.length());
-            memcpy(request.data(), line.c_str(), line.length());
-            socket.send (request, zmq::send_flags::none);
-            std::cout << "---Sent message: " << line.c_str() << std::endl;
-
-            //Get a reply
-            flag = 0;
-            th = new std::thread(timeout, std::ref(context));
-
-            zmq::message_t reply;
-            std::cout << "...Waiting for reply" << std::endl;
-            auto size = socket.recv (reply, zmq::recv_flags::none);
-            flag = 1;
-            cv.notify_one(); 
-
-            char * reply_c_str = (char *) reply.data();
-            reply_c_str[size.value()] = '\0';
-            std::cout << "---Reply: " << reply_c_str << std::endl;
-            //std::cout << "Asking the thread to stop" << std::endl;
-
-            // Parse reply
-
-            (*th).join(); //Waiting for thread to be joined.
-            //std::cout << "Thread joined" << std::endl;
-            
-            /*
-            if (i == 200){
-                std::cout << "Sleeping" << std::endl;
-                sleepForMs(5000);
-                i = 0;
-            } */
-            
-        }catch (const std::exception & e) {
-            //std::cout << "Catch: " << e.what() <<  std::endl;
-            (*th).join();
-            //std::cout << "Thread joined" << std::endl;
-            break;
-        }
-    }
-    testClientCommunication(clientID);
-    return 0;
-}
 
 int checkInstruction(int argc, char *argv[]){
 
@@ -308,12 +188,15 @@ void parseReply(char* reply, int replySize, std::map<std::string, int> &subscrib
         case UNSUB:
             unsubscribeTopic(subscribedTopics, topic);
             std::cout << topic << " unsubscribed with success\n";
+            break;
         case RESUB:
             if(subscribedTopics.find(topic) == subscribedTopics.end()){
                 subscribeTopic(subscribedTopics, topic);
+                std::cout << "Already subscribed to topic:\n" << topic << std::endl;
             } else {
                 std::cout << "Already subscribed to topic:\n" << topic << std::endl;
             }
+            break;
         case GET:
             ss >> postid >> content;
             std::cout << "Message received from topic " << topic << ": " << content << std::endl;
@@ -367,6 +250,7 @@ void runClient(char* argv[], int argc){
     //Check if instruction is valid for a certain client and its subscribed topics
     switch (getInstructionType(instruction)) {
         case SUB:
+            break;
         case PUT:
             break;
         case UNSUB:
