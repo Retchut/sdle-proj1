@@ -23,22 +23,33 @@ void sleepForMs(float miliseconds) {
 }
 
 std::string subscriberFileRead(std::string topicName, std::string clientID){
-    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+    std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
     std::string contents;
 
-    std::ifstream ifs(subscribersDirectory);
+    std::ifstream ifs(subscriberFileDirectory);
     std::string subFileContents;
     std::getline(ifs, contents);
+    ifs.close();
 
     return contents;
-
 }
 
 void subscriberFilePop(std::string topicName, std::string clientID){
+    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+
     return;
 }
 
-void subscriberFilePush(std::string topicName, std::string clientID ){
+void subscriberFilePush(std::string topicName, std::string clientID){
+    std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+
+    std::string oldFileContents = subscriberFileRead(topicName, clientID);
+    std::ofstream ofs(subscriberFileDirectory);
+    
+    ofs << clientID;
+    ofs << " ";
+    ofs << oldFileContents;
+    ofs.close();
     return;
 }
 
