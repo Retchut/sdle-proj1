@@ -14,12 +14,15 @@ Topic::~Topic(){
 };
 
 
-void Topic::loadQueue(int clientID, std::string content){
+void Topic::loadQueue(int clientID, std::vector<int> messageIDs, std::vector<std::string> messageContents){
 
-    return;
     auto clientID_str = std::to_string(clientID);
-    client_msg_queues.at(clientID_str);
+    auto client_queue = &client_msg_queues.at(clientID_str);
 
+    for (int i = 0; i < messageIDs.size(); ++i){
+        auto new_message = Message(messageIDs[i], messageContents[i]);
+        (*client_queue).push(new_message);
+    }
 }
 
 int Topic::sub(std::string client_id){
@@ -56,6 +59,7 @@ int Topic::rem(std::string client_id){
 int Topic::put(Message msg){
     for (std::map<std::string, std::queue <Message>>::iterator it = client_msg_queues.begin(); it!=client_msg_queues.end(); ++it){
         it->second.push(msg);
+        subscriberFilePush(name, it->first, std::to_string(msg.get_id()));
         //std::cout << "Pushed " << it->second.back().get_content() << std::endl;
     }
     return 0;
@@ -76,6 +80,8 @@ Message Topic::get(std::string client_id, int last_msg_id){
     if (queue->size() > 0 && front_message.get_id() == last_msg_id){
         queue->pop();
         front_message = queue->front();
+        subscriberFilePop(name, client_id);
+
     }
 
     if (queue->size() < 1)
