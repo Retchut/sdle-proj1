@@ -31,13 +31,6 @@ void printUsage (){
     std::cout << usage << std::endl;
 }
 
-
-int queue(std::string entity, std::map<std::string, Topic> &topicMap, std::map<std::string, int> &pubInts){
-    std::string storageDirectory = STORAGE_DIR + "/" + entity + "/";
-
-    return 0;
-}
-
 void deleteSubscriberFile(std::string topicName, int clientID){
     std::string topicStorageDir = STORAGE_DIR + "/" + entityName + "/" + topicName + "/";
     std::string topicSubDir = STORAGE_DIR + "/Subscribers/" + topicName + "/";
@@ -139,11 +132,9 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
         std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/";
         std::map<std::string, std::vector<int>> subMap = recoverSubscribers(subscribersDirectory);
 
-        std::cout << "After recoverSubscribers" << std::endl;
-
         // iterate through entries in the server directory
-        fs::directory_iterator it = fs::directory_iterator(storageDirectory);
         if (!subMap.empty()){
+            fs::directory_iterator it = fs::directory_iterator(storageDirectory);
             for(const auto &entry : it){
                 if(entry.is_directory()){
                     std::string topicName = fs::path(entry).filename();
@@ -151,11 +142,7 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
 
 
                     Topic topicObj = Topic(topicName);
-                    if (topicSubIt->second.empty())
-                        std::cout << "True" << std::endl;
-                    else{
-                        std::cout << topicSubIt->second.size() << std::endl;
-                    }
+
                     for(int i = 0; i < topicSubIt->second.size(); i++){
                         std::cout << topicSubIt->second.size() << std::endl;
                         int subbedID = topicSubIt->second.at(i);
