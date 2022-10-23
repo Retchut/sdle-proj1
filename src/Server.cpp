@@ -74,6 +74,13 @@ void createSubscribersFile(std::string topic, int clientID){
     catch(const std::exception & e){
         std::cout << "Caught exception: " << e.what() << "\n";
     }
+
+    std::string topicPath = STORAGE_DIR + "/" + entityName + "/" + topic + "/";
+    try{
+        fs::create_directories(topicPath);
+    }catch(const std::exception & e){
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
 }
 
 std::map<std::string, std::vector<int>> recoverSubscribers(std::string subscribersDirectory){
