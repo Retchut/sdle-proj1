@@ -22,6 +22,26 @@ void sleepForMs(float miliseconds) {
     usleep(miliseconds*1000);
 }
 
+std::string subscriberFileRead(std::string topicName, std::string clientID){
+    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+    std::string contents;
+
+    std::ifstream ifs(subscribersDirectory);
+    std::string subFileContents;
+    std::getline(ifs, contents);
+
+    return contents;
+
+}
+
+void subscriberFilePop(std::string topicName, std::string clientID){
+    return;
+}
+
+void subscriberFilePush(std::string topicName, std::string clientID ){
+    return;
+}
+
 int getNextPostID(std::string entity, std::string topic){
     std::string topicDirectory = STORAGE_DIR + "/" + entity + "/" + topic + "/";
 
