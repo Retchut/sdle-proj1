@@ -22,10 +22,11 @@ enum InstructionType {
     UNSUB = 2,
     GET = 3,
     PUT = 4,
-    SUB_NEW_TOPIC = 5
+    SUB_NEW_TOPIC = 5,
+    RESUB = 6
 };
 
-InstructionType getInstructionType(char* instruction) {
+InstructionType getInstructionType(const char* instruction) {
 
     InstructionType instType;
 
@@ -33,6 +34,7 @@ InstructionType getInstructionType(char* instruction) {
     else if (strcmp(instruction, "UNSUB")  == 0) instType = UNSUB;
     else if (strcmp(instruction, "GET")  == 0) instType = GET;
     else if (strcmp(instruction, "PUT")  == 0) instType = PUT;
+    else if (strcmp(instruction, "RESUB")  == 0) instType = RESUB;
     else instType = INVALID_INSTRUCTION;
 
     return instType;
@@ -60,7 +62,9 @@ void subscribeTopic (std::map<std::string, int> &topicIDs, std::string topic) {
 }
 
 int unsubscribeTopic (std::map<std::string, int> &topicIDs, std::string topic) {
-    return topicIDs.erase(topic);
+    auto it = topicIDs.find(topic);
+    topicIDs.erase(it);
+    return 0;
 }
 
 int changeLastMessageID (std::map<std::string, int> &topicIDs, std::string topic, int messageID) {
@@ -280,6 +284,42 @@ int checkInstruction(int argc, char *argv[]){
     return 0;
 }
 
+void parseReply(char* reply, int replySize, std::map<std::string, int> &subscribedTopics) {
+    // get request string
+    std::stringstream ss(reply);
+
+    std::string instruction;
+    std::string clientID;
+    std::string topic;
+    std::string postid;
+    ss >> instruction >> clientID >> topic;
+    std::cout << instruction <<std::endl;
+
+    switch (getInstructionType(instruction.c_str())){
+        case SUB:
+            subscribeTopic(subscribedTopics, topic);
+            break;
+        case UNSUB:
+            unsubscribeTopic(subscribedTopics, topic);
+        case RESUB:
+            if(subscribedTopics.find(topic) == subscribedTopics.end()){
+                subscribeTopic(subscribedTopics, topic);
+            } else {
+                std::cout << "Already subscribed to topic:\n" << topic << std::endl;
+            }
+        case GET:
+            ss >> postid;
+            //changeLastMessageID(subscribedTopics, topic, )
+        case PUT:
+
+        default:
+            break;
+    }
+    for(auto i: subscribedTopics) {
+        std::cout << i.first << "   " << i.second << std::endl;
+    }
+}
+
 void runClient(char* argv[], int argc){
 
     std::string clientID = argv[2];
@@ -354,6 +394,7 @@ void runClient(char* argv[], int argc){
         char * reply_c_str = (char *) reply.data();
         reply_c_str[size.value()] = '\0';
         std::cout << "---Reply: " << reply_c_str << std::endl;
+        parseReply(reply_c_str, size.value(), subscribedTopics);
         std::cout << "Asking the thread to stop" << std::endl;
         
         (*th).join(); //Waiting for thread to be joined.
