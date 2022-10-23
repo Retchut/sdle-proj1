@@ -259,7 +259,7 @@ int checkInstruction(int argc, char *argv[]){
             }
         break;
         case GET:
-            if(argc != 5){
+            if(argc != 4){
                 std::cout << "Invalid number of arguments for " << argv[1] << std::endl;
                 return 1;
             }
@@ -307,7 +307,7 @@ void runClient(char* argv[], int argc){
         case UNSUB:
         case GET:
             if(subscribedTopics.find(topic) == subscribedTopics.end()) {
-                std::cerr << "Topic not subscribed: \n";
+                std::cerr << "Topic not subscribed: " << topic << std::endl;
                 return;
             }
             break;
@@ -327,6 +327,11 @@ void runClient(char* argv[], int argc){
             ss << argv[i] << sep;
         }
         std::string request = ss.str();
+
+        if(getInstructionType(instruction) == GET) {
+            request += getLastMessageIDFromTopic(subscribedTopics, topic);
+            std::cout << request;
+        }
 
         zmq::message_t requestMsg(request.length());
 
