@@ -283,7 +283,7 @@ void runClient(std::map<std::string, int> &subscribedTopics, char* argv[], int a
     socket.connect("tcp://127.0.0.1:5555");
 
     char *instruction = argv[1];
-    char *topic = argv[2];
+    char *topic = argv[3];
 
     switch (getInstructionType(instruction)) {
         case SUB:
@@ -299,12 +299,14 @@ void runClient(std::map<std::string, int> &subscribedTopics, char* argv[], int a
         default:
             break;
     }
-        
+    
     // get request string
-    std::string request = "";
+    std::stringstream ss;
+    std::string sep = " ";
     for(int i=1; i < argc; ++i) {
-        request += argv[i];
+        ss << argv[i] << sep;
     }
+    std::string request = ss.str();
 
     zmq::message_t requestMsg(request.length());
 
@@ -328,13 +330,13 @@ int main (int argc, char *argv[]) {
 
     std::map<std::string, int> topicIDs;
     
-    if (!checkInstruction(argc, argv)) {
+    if (checkInstruction(argc, argv)) {
         return 1;
     }
 
-    //runClient(topicIDs);
+    runClient(topicIDs, argv, argc);
 
-    std::cout << "Running client " << clientID << std::endl;
+    //std::cout << "Running client " << clientID << std::endl;
 
     std::string ah = argv[2];
     entityName = "Client" + ah;
