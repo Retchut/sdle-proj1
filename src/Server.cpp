@@ -62,20 +62,6 @@ void deleteSubscriberFile(std::string topicName, int clientID){
     }
 }
 
-void addSubscriber(std::string topicName, int clientID){
-    std::string subscribersDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/";
-
-    try{
-        std::cout << "Adding subscriber" << std::endl;
-        std::string path = subscribersDirectory + std::to_string(clientID);
-        std::ofstream ofs(subscribersDirectory);
-        ofs.close();
-    }
-    catch(const std::exception & e){
-        std::cout << "Caught exception: " << e.what() << "\n";
-    }
-}
-
 void createSubscribersFile(std::string topic, int clientID){
     std::string subscribersDir = STORAGE_DIR + "/Subscribers/" + topic + "/";
     try{
@@ -98,12 +84,9 @@ std::map<std::string, std::vector<int>> recoverSubscribers(std::string subscribe
     try {
         fs::directory_iterator subIt = fs::directory_iterator(subscribersDirectory);
         for(const auto &entry : subIt){
-            std::cout << "here rec subs" << std::endl;
             if(entry.is_directory()){
                 fs::directory_iterator topicIt = fs::directory_iterator(entry.path());
                 std::string topicName = entry.path().filename();
-
-                std::cout << topicName << std::endl;
 
                 //subscriberMap.insert({ topicName, std::vector<int>() });
                 subscriberMap.insert(std::pair<std::string, std::vector<int>>(topicName, std::vector<int>()));
@@ -112,8 +95,6 @@ std::map<std::string, std::vector<int>> recoverSubscribers(std::string subscribe
                 for(const auto &client : topicIt){
                     int clientID = std::stoi(client.path().filename());
                     subMapEntry->second.push_back(clientID);
-                    
-                    std::cout << subMapEntry->second.size() << std::endl;
                 }
             }
         }
@@ -156,16 +137,20 @@ int loadServer(std::string entity, std::map<std::string, Topic> &topicMap, std::
                         while (std::getline(is, part, ' ')){
                             try{
                                 messageIDs_array.push_back(std::stoi(part));
-                                std::cout << part << std::endl;
+                                std::cout << "+ loading message " << part << " in topic " << topicName << std::endl;
                             }
                             catch (const std::exception & e){
-                                std::cout << "Read invalid message ID" << std::endl;
+                                std::cout << "Read invalid message ID: " << part << std::endl;
                             }
                         }
 
 
-                        //topicObj.loadQueue(subbedID, messageIDs_array, messageContents_array);
-                        std::cout << "loaded queues for topic " << topicName << " for subscriber " <<  subbedID << std::endl;
+                        std::vector<std::string> messageContents;
+                        for (int i = 0; i < messageIDs_array.size(); i++){
+                            messageContents.push_back(readMessageContents(topicObj.get_name(), std::to_string(messageIDs_array[i])));
+                        }
+                        topicObj.loadQueue(subbedID, messageIDs_array, messageContents);
+                        std::cout << "Loaded queues for topic " << topicName << " for subscriber " <<  subbedID << std::endl;
                     }
 
                     int nextPubID = getNextPostID(entity, topicName);
@@ -277,10 +262,9 @@ int run(std::map<std::string, Topic> * topicsMap, std::map<std::string, int> * p
                     //SUB
                     if (topic->sub(client_id) == 0){
                         reply_msg = "SUB " + client_id + " " + topic_name;
-                        int client_idInt;
                         try{
-                            client_idInt = stoi(client_id);
-                            addSubscriber(topic_name, stoi(client_id));
+                            auto client_idInt = stoi(client_id);
+                            createSubscribersFile(topic_name, client_idInt);
                         }
                         catch(std::exception e){
                             std::cout << "Caught exception while attempting to add a subscriber: " << e.what() << std::endl;
