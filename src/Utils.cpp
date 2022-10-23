@@ -22,11 +22,21 @@ void sleepForMs(float miliseconds) {
     usleep(miliseconds*1000);
 }
 
+std::string readMessageContents(std::string topicName, std::string messageID){
+    std::string messagePath = STORAGE_DIR + "/Server/" + topicName + "/" + messageID;
+
+    std::ifstream messageFile(messagePath);
+    std::string message;
+    std::getline(messageFile, message);
+    messageFile.close();
+    return message;
+}
+
 std::string subscriberFileRead(std::string topicName, std::string clientID){
-    std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+    std::string subscriberFilePath = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
     std::string contents;
 
-    std::ifstream ifs(subscriberFileDirectory);
+    std::ifstream ifs(subscriberFilePath);
     std::string subFileContents;
     std::getline(ifs, contents);
     ifs.close();
@@ -35,11 +45,11 @@ std::string subscriberFileRead(std::string topicName, std::string clientID){
 }
 
 void subscriberFilePop(std::string topicName, std::string clientID){
-    std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+    std::string subscriberFilePath = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
 
     // read file contents and discard the oldest id
     std::stringstream oldFileStream(subscriberFileRead(topicName, clientID));
-    std::ofstream newSubFile(subscriberFileDirectory);
+    std::ofstream newSubFile(subscriberFilePath);
 
     std::string readID;
     oldFileStream >> readID; // discard the first item
@@ -55,10 +65,10 @@ void subscriberFilePop(std::string topicName, std::string clientID){
 }
 
 void subscriberFilePush(std::string topicName, std::string clientID, std::string newID){
-    std::string subscriberFileDirectory = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
+    std::string subscriberFilePath = STORAGE_DIR + "/Subscribers/" + topicName + "/" + clientID;
 
     std::string oldFileContents = subscriberFileRead(topicName, clientID);
-    std::ofstream ofs(subscriberFileDirectory);
+    std::ofstream ofs(subscriberFilePath);
     
     ofs << oldFileContents << " " << newID;
     ofs.close();

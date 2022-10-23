@@ -7,6 +7,7 @@ class Topic;
 
 void sleepForMs(float miliseconds);
 int setupStorage(std::string entity);
+std::string readMessageContents(std::string topicName, std::string messageID);
 std::string subscriberFileRead(std::string topicName, std::string clientID);
 void subscriberFilePop(std::string topicName, std::string clientID);
 void subscriberFilePush(std::string topicName, std::string clientID, std::string newID);
